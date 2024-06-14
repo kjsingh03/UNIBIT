@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import io from 'socket.io-client';
 import Modal from 'react-modal';
 import { useDispatch, useSelector } from 'react-redux';
@@ -10,6 +10,7 @@ import { Input } from '../components';
 function Room() {
     const { id } = useParams();
     const [username, setUsername] = useState(localStorage.getItem('name') || '');
+    // const [username, setUsername] = useState( '');
     const [users, setUsers] = useState([]);
     const [readyPlayers, setReadyPlayers] = useState([]);
     const [isReady, setIsReady] = useState(false);
@@ -23,9 +24,12 @@ function Room() {
     const socketRef = useRef(null);
     const [betTime, setBetTime] = useState(10)
     const [isFlipping, setIsFlipping] = useState(false);
+    const [playButton,setPlayButton] = useState(true)
+    const [playAgain, setPlayAgain] = useState(false);
 
     const userBalance = useSelector(state => state.userBalance);
     const dispatch = useDispatch();
+    const navigate = useNavigate()
 
     const betAmounts = {
         'room1': 1000,
@@ -75,7 +79,7 @@ function Room() {
             setShowModal(true);
             setIsFlipping(true)
             setTimeout(() => {
-                setChoice((p) =>  { socket.emit('chooseSide', p) ; return p });
+                setChoice((p) => { socket.emit('chooseSide', p); return p });
             }, 10000);
             setInterval(() => setBetTime(p => p > 0 ? p - 1 : 0), 1000)
         };
@@ -83,15 +87,21 @@ function Room() {
         const handleGameResult = ({ result, winners, losers, winnings, losses }) => {
             setGameResult({ result, winners, losers, winnings, losses });
             setIsFlipping(false);
-            if(result===choice) dispatch(setUserBalance(userBalance+winnings))
-            setTimeout(() => {
+            setIsReady(false)
+            setPlayAgain(true);
+            setJoinedRoom(false);
+            if (result === choice) dispatch(setUserBalance(userBalance + winnings + betAmount))
+                socket.emit('resetGame', { roomId: id });
+                setTimeout(() => {
                 document.querySelector('.bet-screen').addEventListener('click', (e) => {
                     if (!document.querySelector('.bet-modal').contains(e.target)) {
                         setShowModal(false)
+                        setPlayButton(true)
+                        navigate('/')
                     }
                 })
                 document.querySelector('.bet-btns').childNodes.forEach(btn => btn.disabled = false)
-            }, 10000)
+            }, 1000)
         };
 
         socket.on('connect', handleConnect);
@@ -162,46 +172,57 @@ function Room() {
         socket.emit('joinRoom', { roomId: id, username });
         dispatch(setUserBalance(userBalance - betAmount))
         setShowNameModal(false);
+        setPlayButton(false)
     };
+
+    // const handlePlayAgain = () => {
+    //     const socket = socketRef.current;
+    //     socket.emit('resetGame', { roomId: id });
+    //     setGameResult(null);
+    //     setPlayAgain(false);
+    //     setPlayButton(true);
+    //     setJoinedRoom(false);
+    // };
 
     if (roomFull) {
         return <div>Room is full. Please try again later.</div>;
     }
 
-    console.log(gameResult?.result,choice)
-
     return (
         <div className='flex flex-col gap-8 pt-32'>
-            <div className="flex flex-col lg:flex-row items-center lg:items-start justify-between gap-8 w-[95%] md:w-[80%] mx-auto h-[80vh] 2xl:h-[75vh] ">
+            <div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-8 w-[95%] md:w-[80%] mx-auto h-[80vh] 2xl:h-[75vh] ">
                 <div className="flex flex-col items-center gap-6 lg:py-12">
                     <div className="w-64">
                         <img src={logo} className='w-full h-full object-contain' alt="Card Logo" />
                     </div>
                     <p className='text-xl font-medium'>Amount : {betAmount} $UIBT</p>
-                    <button className='btn' onClick={handlePlayClick} disabled={roomFull}>
+                    <button className={`btn ${playButton?'block':'hidden'} `} onClick={handlePlayClick} disabled={roomFull}>
                         Play
                     </button>
                 </div>
-                <div className="flex flex-col gap-8 py-4 w-full lg:w-[60vw]">
-                    <h6 className='text-lg font-bold'>Users Joined</h6>
-                    <div className="grid grid-cols-2 2xl:grid-cols-5 gap-4 overflow-y-auto px-2">
-                        {
-                            users.map((user, index) => (
-                                <div key={index} className={`flex flex-col items-center justify-between gap-2 bg-[#5f5f5f0a] h-32 p-4 rounded-xl ${user.state ? 'border-green-600' : 'border-red-600'} border`}>
-                                    <div className="w-16 h-16">
-                                        <img src={user.image} className='w-full h-full object-cover' alt="user image" />
+                {
+                    users.length > 0 && joinedRoom &&
+                    <div className="flex flex-col gap-8 py-4 w-full lg:w-[60vw]">
+                        <h6 className='text-lg font-bold'>Users Joined</h6>
+                        <div className="grid grid-cols-2 2xl:grid-cols-5 gap-4 overflow-y-auto px-2">
+                            {
+                                users.map((user, index) => (
+                                    <div key={index} className={`flex flex-col items-center justify-between gap-2 bg-[#5f5f5f0a] h-32 p-4 rounded-xl ${user.state ? 'border-green-600' : 'border-red-600'} border`}>
+                                        <div className="w-16 h-16">
+                                            <img src={user.image} className='w-full h-full object-cover' alt="user image" />
+                                        </div>
+                                        <p className='text-xl font-medium'>{user.name}</p>
                                     </div>
-                                    <p className='text-xl font-medium'>{user.name}</p>
-                                </div>
-                            ))
-                        }
+                                ))
+                            }
+                        </div>
+                        <div className={`${joinedRoom ? 'block' : 'hidden'} w-full text-end`}>
+                            <button className='btn' onClick={handleReady} disabled={!canJoin}>
+                                {isReady ? 'Not Ready' : 'Set Ready'}
+                            </button>
+                        </div>
                     </div>
-                    <div className={`${joinedRoom ? 'block' : 'hidden'} w-full text-end`}>
-                        <button className='btn' onClick={handleReady} disabled={!canJoin}>
-                            {isReady ? 'Not Ready' : 'Set Ready'}
-                        </button>
-                    </div>
-                </div>
+                }
             </div>
 
             <div className={`bet-screen bg-[#00000067] ${showModal ? 'flex' : 'hidden'} justify-center items-center z-[49] w-screen h-screen fixed top-0 left-0`}>
@@ -220,11 +241,11 @@ function Room() {
                     </div>
                     <div className="h-8">
                         {
-                            gameResult?.result===choice && gameResult &&
+                            gameResult?.result === choice && gameResult &&
                             <p className='text-2xl font-semibold'>Congrats! You won {gameResult?.winnings}</p>
                         }
                         {
-                            gameResult?.result!==choice && gameResult &&
+                            gameResult?.result !== choice && gameResult &&
                             <p className='text-2xl font-semibold'>Oops! You got rugged {gameResult?.losses}</p>
                         }
                     </div>

@@ -7,7 +7,7 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: '*', // Allow all origins for simplicity
+    origin: '*',
     methods: ['GET', 'POST'],
   },
 });
@@ -34,13 +34,12 @@ io.on('connection', (socket) => {
     room.players.push({ id: socket.id, name: username });
     socket.join(roomId);
     io.to(roomId).emit('playerList', room.players);
-    io.to(socket.id).emit('joinedRoom', true); // Signal that the user has joined the room
+    io.to(socket.id).emit('joinedRoom', true);
 
     socket.on('setReady', () => {
       if (!room.readyPlayers.includes(socket.id)) {
         room.readyPlayers.push(socket.id);
       } else {
-        console.log(room.readyPlayers)
         room.readyPlayers = room.readyPlayers.filter(id => id !== socket.id);
       }
 
@@ -66,12 +65,11 @@ io.on('connection', (socket) => {
           }
         }
 
-        const winnings = winners.length > 0 ? room.betAmount * MAX_PLAYERS / winners.length : 0;
+        const winnings = winners.length > 0 ? (room.betAmount * MAX_PLAYERS / winners.length)-room.betAmount : 0;
         const losses = room.betAmount;
 
         io.to(roomId).emit('gameResult', { result, winners, losers, winnings, losses });
 
-        // Reset game state for next round
         room.readyPlayers = [];
         room.playerChoices = {};
       }
@@ -84,6 +82,23 @@ io.on('connection', (socket) => {
       io.to(roomId).emit('playerList', room.players);
       io.to(roomId).emit('readyPlayers', room.readyPlayers);
     });
+  });
+
+  socket.on('resetGame', ({ roomId }) => {
+    const room = rooms[roomId];
+
+    room.readyPlayers = [];
+    room.players = [];
+    room.playerChoices = {};
+
+    io.to(roomId).emit('readyPlayers', room.readyPlayers);
+    io.to(roomId).emit('playerList', room.players);
+  });
+
+  socket.on('connect', () => {
+    for (const roomId in rooms) {
+      io.to(roomId).emit('playerList', rooms[roomId].players);
+    }
   });
 });
 

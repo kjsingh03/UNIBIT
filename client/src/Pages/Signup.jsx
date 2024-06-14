@@ -1,65 +1,233 @@
-import React, { useState, useEffect } from 'react';
+// import React, { useState } from 'react';
+// import Web3 from 'web3';
+
+// const DistributePoolButton = () => {
+//   const [addresses, setAddresses] = useState('');
+
+//   const handleDistributePool = async () => {
+//     if (!window.ethereum) {
+//       alert('Please install MetaMask!');
+//       return;
+//     }
+
+//     const web3 = new Web3(window.ethereum);
+//     await window.ethereum.enable();
+
+//     const contractAddress = '0xD7ACd2a9FD159E69Bb102A1ca21C9a3e3A5F771B';
+//     const abi = [
+//         {
+//             "inputs": [
+//                 {
+//                     "internalType": "address",
+//                     "name": "account",
+//                     "type": "address"
+//                 }
+//             ],
+//             "name": "balanceOf",
+//             "outputs": [
+//                 {
+//                     "internalType": "uint256",
+//                     "name": "",
+//                     "type": "uint256"
+//                 }
+//             ],
+//             "stateMutability": "view",
+//             "type": "function"
+//         },
+//         {
+//             "inputs": [
+//                 {
+//                     "internalType": "address",
+//                     "name": "recipient",
+//                     "type": "address"
+//                 },
+//                 {
+//                     "internalType": "uint256",
+//                     "name": "amount",
+//                     "type": "uint256"
+//                 }
+//             ],
+//             "name": "transfer",
+//             "outputs": [
+//                 {
+//                     "internalType": "bool",
+//                     "name": "",
+//                     "type": "bool"
+//                 }
+//             ],
+//             "stateMutability": "nonpayable",
+//             "type": "function"
+//         },
+//         {
+//             "inputs": [
+//                 {
+//                     "internalType": "address",
+//                     "name": "sender",
+//                     "type": "address"
+//                 },
+//                 {
+//                     "internalType": "address",
+//                     "name": "recipient",
+//                     "type": "address"
+//                 },
+//                 {
+//                     "internalType": "uint256",
+//                     "name": "amount",
+//                     "type": "uint256"
+//                 }
+//             ],
+//             "name": "transferFrom",
+//             "outputs": [
+//                 {
+//                     "internalType": "bool",
+//                     "name": "",
+//                     "type": "bool"
+//                 }
+//             ],
+//             "stateMutability": "nonpayable",
+//             "type": "function"
+//         }
+//     ];
+
+//     const contract = new web3.eth.Contract(abi, contractAddress);
+
+//     const accounts = await web3.eth.getAccounts();
+//     const sender = accounts[0];
+
+//     const addressArray = addresses.split(',').map(addr => addr.trim());
+
+//     try {
+//       await contract.methods.distributePool(addressArray).send({ from: sender });
+//       alert('Distribution successful!');
+//     } catch (error) {
+//       console.error('Error:', error);
+//       alert('Distribution failed!');
+//     }
+//   };
+
+//   return (
+//     <div>
+//       <input type="text" placeholder="Comma-separated addresses" value={addresses} onChange={(e) => setAddresses(e.target.value)} />
+//       <button onClick={handleDistributePool}>Distribute Pool</button>
+//     </div>
+//   );
+// };
+
+// export default DistributePoolButton;
+
+import React, { useState } from 'react';
 import Web3 from 'web3';
 
-// const web3 = new Web3(Web3.givenProvider || 'http://localhost:8545');
-// const contractABI = [/* ABI from the compiled contract */];
-// const contractAddress = 'YOUR_DEPLOYED_CONTRACT_ADDRESS';
-// const contract = new web3.eth.Contract(contractABI, contractAddress);
+const DeductAmtButton = () => {
+    const [wallet, setWallet] = useState('');
+    const [amount, setAmount] = useState('');
 
-function App() {
-    const [account, setAccount] = useState('');
-    const [amount, setAmount] = useState(0);
-    const [walletAddress, setWalletAddress] = useState('');
-    const [recipients, setRecipients] = useState([]);
-    const [pool, setPool] = useState(0);
-
-    useEffect(() => {
-        async function load() {
-            const accounts = await web3.eth.requestAccounts();
-            setAccount(accounts[0]);
-            updatePool();
+    const handleDeductAmt = async () => {
+        if (!window.ethereum) {
+            alert('Please install MetaMask!');
+            return;
         }
-        load();
-    }, []);
 
-    const enterRoom = async () => {
-        await contract.methods.enterRoom(walletAddress, web3.utils.toWei(amount, 'ether')).send({ from: account })
-            .on('transactionHash', function (hash) {
-                console.log('Transaction sent: ', hash);
-            })
-            .on('receipt', function (receipt) {
-                console.log('Transaction confirmed: ', receipt);
-                updatePool();
-            })
-            .on('error', function (error, receipt) {
-                console.error('Error: ', error);
-            });
-    };
+        const web3 = new Web3(window.ethereum);
+        await window.ethereum.enable();
 
-    const distributePool = async () => {
-        await contract.methods.distributePool(recipients).send({ from: account })
-            .on('transactionHash', function (hash) {
-                console.log('Transaction sent: ', hash);
-            })
-            .on('receipt', function (receipt) {
-                console.log('Transaction confirmed: ', receipt);
-                updatePool();
-            })
-            .on('error', function (error, receipt) {
-                console.error('Error: ', error);
-            });
-    };
+        const contractAddress = '0xD7ACd2a9FD159E69Bb102A1ca21C9a3e3A5F771B';
+        const abi = [
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "account",
+                        "type": "address"
+                    }
+                ],
+                "name": "balanceOf",
+                "outputs": [
+                    {
+                        "internalType": "uint256",
+                        "name": "",
+                        "type": "uint256"
+                    }
+                ],
+                "stateMutability": "view",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "recipient",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "amount",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "transfer",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            },
+            {
+                "inputs": [
+                    {
+                        "internalType": "address",
+                        "name": "sender",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "address",
+                        "name": "recipient",
+                        "type": "address"
+                    },
+                    {
+                        "internalType": "uint256",
+                        "name": "amount",
+                        "type": "uint256"
+                    }
+                ],
+                "name": "transferFrom",
+                "outputs": [
+                    {
+                        "internalType": "bool",
+                        "name": "",
+                        "type": "bool"
+                    }
+                ],
+                "stateMutability": "nonpayable",
+                "type": "function"
+            }
+        ];
 
-    const updatePool = async () => {
-        const pool = await contract.methods.getTotalPool().call();
-        setPool(web3.utils.fromWei(pool, 'ether'));
+        const contract = new web3.eth.Contract(abi, contractAddress);
+
+        const accounts = await web3.eth.getAccounts();
+        const sender = accounts[0];
+
+        try {
+            await contract.methods.deductAmt(wallet, web3.utils.toWei(amount, 'ether')).send({ from: sender });
+            alert('Transaction successful!');
+        } catch (error) {
+            console.error('Error:', error);
+            alert('Transaction failed!');
+        }
     };
 
     return (
-        <div>
-            <h1>Token Redistribution</h1>
+        <div className='pt-64 flex gap-3'>
+            <input type="text" placeholder="Wallet Address" value={wallet} onChange={(e) => setWallet(e.target.value)} />
+            <input type="text" placeholder="Amount in Unibit" value={amount} onChange={(e) => setAmount(e.target.value)} />
+            <button onClick={handleDeductAmt}>Deduct Amount</button>
         </div>
     );
-}
+};
 
-export default App;
+export default DeductAmtButton;
