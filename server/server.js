@@ -14,7 +14,7 @@ const io = socketIo(server, {
 
 const MAX_PLAYERS = 3;
 const MIN_PLAYERS_TO_START = 2;
-const START_GAME_DELAY = 15000; // 15 seconds
+const START_GAME_DELAY = 5000; // 15 seconds
 
 const rooms = {
   'room1': { players: [], readyPlayers: [], playerChoices: {}, betAmount: 1, startGameTimer: null },
