@@ -45,37 +45,43 @@ nav a.active {
   width: max-content;
   text-align: center;
   background-color: #00ACE6;
+  border: 1px solid transparent;
   color: white;
   padding: 0.5rem 1rem;
   border-radius: 0.1rem;
   font-size: 12px;
-  cursor: pointer;
-  border: 1px solid transparent;
   border-radius: 0.5rem;
 }
 
-.btn1 {
-  width: max-content;
-  text-align: center;
-  background-color: transparent;
-  padding: 0.5rem 1rem;
-  border-radius: 0.1rem;
-  font-size: 12px;
+.btn1,.btn2 {
   cursor: pointer;
-  border: 1px solid #334047;
 }
 
-.btn1:hover {
+.btn2{
+  background-color: #151515;
+  border: 1px solid #c4c0c8;
+}
+
+.btn2:hover{
   background-color: #00ACE6;
   border: 1px solid transparent;
 }
 
-.btn:hover {
+.selected-btn {
+  cursor: default;
+}
+
+.btn1:hover {
   background-color: #151515;
   border: 1px solid #c4c0c8;
 }
 
 .bet-btn.active {
+  background-color: #151515;
+  border: 1px solid #c4c0c8;
+}
+
+.selected-btn.selected {
   background-color: #151515;
   border: 1px solid #c4c0c8;
 }
