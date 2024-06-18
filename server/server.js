@@ -14,10 +14,10 @@ const io = socketIo(server, {
 
 const MAX_PLAYERS = 30;
 const MIN_PLAYERS_TO_START = 2;
-const START_GAME_DELAY = 10000;
+const START_GAME_DELAY = 2000;
 
 const rooms = {
-  'room1': { players: [], readyPlayers: [], playerChoices: {}, betAmount: 1, startGameTimer: null },
+  'room1': { players: [], readyPlayers: [], playerChoices: {}, betAmount: 1000, startGameTimer: null },
   'room2': { players: [], readyPlayers: [], playerChoices: {}, betAmount: 10000, startGameTimer: null },
   'room3': { players: [], readyPlayers: [], playerChoices: {}, betAmount: 100000, startGameTimer: null },
 };

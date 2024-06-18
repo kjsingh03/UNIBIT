@@ -581,31 +581,220 @@ const poolAbi = [
 	}
 ]
 
+// const poolContractAddress = '';
+
+// const poolAbi = [
+// 	{
+// 		"inputs": [
+// 			{
+// 				"internalType": "address",
+// 				"name": "unibitTokenAddress",
+// 				"type": "address"
+// 			}
+// 		],
+// 		"stateMutability": "nonpayable",
+// 		"type": "constructor"
+// 	},
+// 	{
+// 		"anonymous": false,
+// 		"inputs": [
+// 			{
+// 				"indexed": true,
+// 				"internalType": "address",
+// 				"name": "player",
+// 				"type": "address"
+// 			},
+// 			{
+// 				"indexed": false,
+// 				"internalType": "string",
+// 				"name": "room",
+// 				"type": "string"
+// 			},
+// 			{
+// 				"indexed": false,
+// 				"internalType": "uint256",
+// 				"name": "choice",
+// 				"type": "uint256"
+// 			},
+// 			{
+// 				"indexed": false,
+// 				"internalType": "uint256",
+// 				"name": "amount",
+// 				"type": "uint256"
+// 			}
+// 		],
+// 		"name": "BetPlaced",
+// 		"type": "event"
+// 	},
+// 	{
+// 		"anonymous": false,
+// 		"inputs": [
+// 			{
+// 				"indexed": false,
+// 				"internalType": "string",
+// 				"name": "room",
+// 				"type": "string"
+// 			},
+// 			{
+// 				"indexed": false,
+// 				"internalType": "uint256",
+// 				"name": "winningNumber",
+// 				"type": "uint256"
+// 			},
+// 			{
+// 				"indexed": false,
+// 				"internalType": "uint256",
+// 				"name": "rewardPerWinner",
+// 				"type": "uint256"
+// 			}
+// 		],
+// 		"name": "WinnerDeclared",
+// 		"type": "event"
+// 	},
+// 	{
+// 		"stateMutability": "payable",
+// 		"type": "fallback"
+// 	},
+// 	{
+// 		"inputs": [],
+// 		"name": "MAX_PLAYERS",
+// 		"outputs": [
+// 			{
+// 				"internalType": "uint256",
+// 				"name": "",
+// 				"type": "uint256"
+// 			}
+// 		],
+// 		"stateMutability": "view",
+// 		"type": "function"
+// 	},
+// 	{
+// 		"inputs": [],
+// 		"name": "MIN_PLAYERS",
+// 		"outputs": [
+// 			{
+// 				"internalType": "uint256",
+// 				"name": "",
+// 				"type": "uint256"
+// 			}
+// 		],
+// 		"stateMutability": "view",
+// 		"type": "function"
+// 	},
+// 	{
+// 		"inputs": [
+// 			{
+// 				"internalType": "string",
+// 				"name": "roomName",
+// 				"type": "string"
+// 			},
+// 			{
+// 				"internalType": "uint256",
+// 				"name": "choice",
+// 				"type": "uint256"
+// 			},
+// 			{
+// 				"internalType": "uint256",
+// 				"name": "amountInUnibit",
+// 				"type": "uint256"
+// 			}
+// 		],
+// 		"name": "deposit",
+// 		"outputs": [],
+// 		"stateMutability": "nonpayable",
+// 		"type": "function"
+// 	},
+// 	{
+// 		"inputs": [],
+// 		"name": "getContractBalance",
+// 		"outputs": [
+// 			{
+// 				"internalType": "uint256",
+// 				"name": "",
+// 				"type": "uint256"
+// 			}
+// 		],
+// 		"stateMutability": "view",
+// 		"type": "function"
+// 	},
+// 	{
+// 		"inputs": [],
+// 		"name": "owner",
+// 		"outputs": [
+// 			{
+// 				"internalType": "address",
+// 				"name": "",
+// 				"type": "address"
+// 			}
+// 		],
+// 		"stateMutability": "view",
+// 		"type": "function"
+// 	},
+// 	{
+// 		"inputs": [
+// 			{
+// 				"internalType": "string",
+// 				"name": "",
+// 				"type": "string"
+// 			}
+// 		],
+// 		"name": "rooms",
+// 		"outputs": [
+// 			{
+// 				"internalType": "uint256",
+// 				"name": "pool",
+// 				"type": "uint256"
+// 			},
+// 			{
+// 				"internalType": "uint256",
+// 				"name": "bets0",
+// 				"type": "uint256"
+// 			},
+// 			{
+// 				"internalType": "uint256",
+// 				"name": "bets1",
+// 				"type": "uint256"
+// 			}
+// 		],
+// 		"stateMutability": "view",
+// 		"type": "function"
+// 	},
+// 	{
+// 		"inputs": [
+// 			{
+// 				"internalType": "string",
+// 				"name": "roomName",
+// 				"type": "string"
+// 			}
+// 		],
+// 		"name": "selectWinner",
+// 		"outputs": [],
+// 		"stateMutability": "nonpayable",
+// 		"type": "function"
+// 	},
+// 	{
+// 		"inputs": [],
+// 		"name": "unibitToken",
+// 		"outputs": [
+// 			{
+// 				"internalType": "contract IERC20",
+// 				"name": "",
+// 				"type": "address"
+// 			}
+// 		],
+// 		"stateMutability": "view",
+// 		"type": "function"
+// 	},
+// 	{
+// 		"stateMutability": "payable",
+// 		"type": "receive"
+// 	}
+// ];
+
+
 const DeductAmtButton = () => {
 	const [amount, setAmount] = useState(10);
-	const [account, setAccount] = useState('');
 	const [betChoice,setBetChoice] = useState('heads')
-	const [unibitBalance, setUnibitBalance] = useState(0);
-
-	const connectWallet = async () => {
-		if (typeof window.ethereum !== 'undefined') {
-			const web3 = new Web3(window.ethereum);
-	
-			try {
-				const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-				setAccount(accounts[0]);
-	
-				const unibitTokenContract = new web3.eth.Contract(unibitTokenABI, unibitTokenAddress);
-	
-				const balance = await unibitTokenContract.methods.balanceOf(accounts[0]).call();
-				setUnibitBalance(parseInt(balance) / 10 ** 18);
-			} catch (error) {
-				console.error('Error connecting to MetaMask or fetching balance:', error);
-			}
-		} else {
-			console.error('MetaMask is not installed');
-		}
-	};
 	
 	const handleDeductAmt = async () => {
 		if (!window.ethereum) {
@@ -647,16 +836,6 @@ const DeductAmtButton = () => {
 
 	return (
 		<div className="flex flex-col gap-4">
-			<div>
-				{account ? (
-					<div>
-						<p>Connected Account: {account}</p>
-						<p>Unibit Balance: {unibitBalance}</p>
-					</div>
-				) : (
-					<button className='btn' onClick={connectWallet}>Connect Wallet</button>
-				)}
-			</div>
 			<div className='pt-64 flex gap-3'>
 				<input type="text" placeholder="Amount in Unibit" value={amount} onChange={(e) => setAmount(e.target.value)} />
 				<select onChange={e=>setBetChoice(e.target.value)} id="">

@@ -32,7 +32,7 @@ function Room() {
 	const navigate = useNavigate()
 
 	const betAmounts = {
-		'room1': 1,
+		'room1': 1000,
 		'room2': 10000,
 		'room3': 100000,
 	};
@@ -112,6 +112,7 @@ function Room() {
 
 		const handleGameResult = ({ result, winners, losers, winnings, losses }) => {
 			setGameResult({ result, winners, losers, winnings, losses });
+			console.log({ result, winners, losers, winnings, losses })
 			setIsFlipping(false);
 			setPlayAgain(true)
 			if (result === choice) dispatch(setUserBalance(userBalance + winnings + betAmount))
