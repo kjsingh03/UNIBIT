@@ -7,7 +7,7 @@ import { coinLogo, hlogo, logo } from '../assets'
 function Home() {
 
   return (
-    <div className='flex flex-col gap-8 pt-32'>
+    <div className='flex flex-col gap-8 pt-32 pb-16'>
       <div className="flex flex-col gap-8 w-[95%] md:w-[80%] mx-auto">
 
         <div className="flex flex-col gap-4">
@@ -17,7 +17,7 @@ function Home() {
 
         <h6 className='text-lg font-bold' >Available Rooms</h6>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 place-items-center">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-2 place-items-center">
           <PlayerCard amount={1000} img={logo} id={'room1'} />
           <PlayerCard amount={10000} img={coinLogo} id={'room2'} />
           <PlayerCard amount={100000} img={hlogo} id={'room3'} />

@@ -352,57 +352,76 @@ const unibitTokenAddress = '0xfc842DA376c6aAFFB154CaB03D51507c20301Aa0';
 
 function Navbar() {
 
-  const dispatch = useDispatch()
+	const dispatch = useDispatch()
 
-  const userBalance = useSelector(state=>state.userBalance)
+	const userBalance = useSelector(state => state.userBalance)
 
-  const [account, setAccount] = useState('');
-  const [unibitBalance, setUnibitBalance] = useState(0);
+	const [account, setAccount] = useState('');
+	const [unibitBalance, setUnibitBalance] = useState(0);
 
-  const connectWallet = async () => {
+	const connectWallet = async () => {
 		if (typeof window.ethereum !== 'undefined') {
 			const web3 = new Web3(window.ethereum);
-	
+
 			try {
 				const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
 				setAccount(accounts[0]);
-	
+
 				const unibitTokenContract = new web3.eth.Contract(unibitTokenABI, unibitTokenAddress);
-	
+
 				const balance = await unibitTokenContract.methods.balanceOf(accounts[0]).call();
 
 				setUnibitBalance(parseInt(balance) / 10 ** 18);
 
 			} catch (error) {
-				console.error('Error connecting to MetaMask or fetching balance:', error);
+				alert('Error connecting to MetaMask or fetching balance:', error);
 			}
 		} else {
-			console.error('MetaMask is not installed');
+			alert('MetaMask is not installed');
 		}
 	};
 
-  return (
-    <nav className='w-full fixed bg-[#00000066] '>
-      <div className="w-[95%] md:w-[80%] mx-auto flex items-center justify-between ">
-        <Link to="/" className="w-32">
-          <img src={hlogo} className='w-full -full object-cover' alt="UIBT Logo" />
-        </Link>
-        <ul className='flex items-center gap-4'>
-          <li><Link to="/">Home</Link></li>
-          <li><Link to="/">{userBalance} $UIBT</Link></li>
-          <div>
-            {account ? (
-              <div>
-                <li>Unibit Balance: {unibitBalance}</li>
-              </div>
-            ) : (
-              <li><button onClick={connectWallet}>Connect Wallet</button></li>
-            )}
-          </div>
-        </ul>
-      </div>
-    </nav>
-  );
+	const activateNavbar = () => {
+		const navbar = document.querySelector('.navbar')
+		const screen = document.querySelector('.screen')
+
+		navbar.classList.add('active')
+		screen.style.display = 'flex'
+
+		screen.addEventListener('click', (e) => {
+			if (!navbar.contains(e.target)) {
+				screen.style.display = 'none'
+				navbar.classList.remove('active')
+			}
+		})
+
+	}
+
+	return (
+		<nav className='w-full fixed bg-[#00000066] '>
+			<div className="w-[95%] md:w-[80%] mx-auto flex items-center justify-between ">
+				<Link to="/" className="w-32">
+					<img src={hlogo} className='w-full -full object-cover' alt="UIBT Logo" />
+				</Link>
+				<div className="md:hidden">
+				<button onClick={activateNavbar} id="navbar-toggler" className="text-xl py-[0.9rem] text-white"  >☰</button>
+				</div>
+				<ul className='navbar flex bg-[#000000] z-40 w-64 flex-col justify-center fixed top-0 right-0 h-screen translate-x-[100%] md:translate-x-0 md:bg-transparent md:w-auto md:flex-row md:justify-normal md:static md:h-auto items-center gap-4'>
+					<li><Link to="/">Home</Link></li>
+					<li><Link to="/">{userBalance} $UIBT</Link></li>
+					<div>
+						{account ? (
+							<div>
+								<li>Unibit Balance: {unibitBalance}</li>
+							</div>
+						) : (
+							<li><button onClick={connectWallet}>Connect Wallet</button></li>
+						)}
+					</div>
+				</ul>
+			</div>
+		</nav>
+	);
 }
 
 export default Navbar;

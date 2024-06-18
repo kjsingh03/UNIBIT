@@ -347,9 +347,143 @@ const unibitTokenABI = [
 
 const unibitTokenAddress = '0xfc842DA376c6aAFFB154CaB03D51507c20301Aa0';
 
-const poolContractAddress = '0xA095EF104ab55B9f456AAB63b99BBEe926F09f36';
+// const poolContractAddress = '0xA095EF104ab55B9f456AAB63b99BBEe926F09f36';
+
+// const poolAbi = [
+// 	{
+// 		"inputs": [
+// 			{
+// 				"internalType": "address",
+// 				"name": "unibitTokenAddress",
+// 				"type": "address"
+// 			}
+// 		],
+// 		"stateMutability": "nonpayable",
+// 		"type": "constructor"
+// 	},
+// 	{
+// 		"stateMutability": "payable",
+// 		"type": "fallback"
+// 	},
+// 	{
+// 		"inputs": [],
+// 		"name": "MAX_PLAYERS",
+// 		"outputs": [
+// 			{
+// 				"internalType": "uint256",
+// 				"name": "",
+// 				"type": "uint256"
+// 			}
+// 		],
+// 		"stateMutability": "view",
+// 		"type": "function"
+// 	},
+// 	{
+// 		"inputs": [
+// 			{
+// 				"internalType": "uint256",
+// 				"name": "amountInUnibit",
+// 				"type": "uint256"
+// 			}
+// 		],
+// 		"name": "deposit",
+// 		"outputs": [],
+// 		"stateMutability": "nonpayable",
+// 		"type": "function"
+// 	},
+// 	{
+// 		"inputs": [],
+// 		"name": "owner",
+// 		"outputs": [
+// 			{
+// 				"internalType": "address",
+// 				"name": "",
+// 				"type": "address"
+// 			}
+// 		],
+// 		"stateMutability": "view",
+// 		"type": "function"
+// 	},
+// 	{
+// 		"inputs": [
+// 			{
+// 				"internalType": "uint256",
+// 				"name": "",
+// 				"type": "uint256"
+// 			}
+// 		],
+// 		"name": "players",
+// 		"outputs": [
+// 			{
+// 				"internalType": "address",
+// 				"name": "",
+// 				"type": "address"
+// 			}
+// 		],
+// 		"stateMutability": "view",
+// 		"type": "function"
+// 	},
+// 	{
+// 		"inputs": [],
+// 		"name": "pool",
+// 		"outputs": [
+// 			{
+// 				"internalType": "uint256",
+// 				"name": "",
+// 				"type": "uint256"
+// 			}
+// 		],
+// 		"stateMutability": "view",
+// 		"type": "function"
+// 	},
+// 	{
+// 		"inputs": [],
+// 		"name": "unibitToken",
+// 		"outputs": [
+// 			{
+// 				"internalType": "contract IERC20",
+// 				"name": "",
+// 				"type": "address"
+// 			}
+// 		],
+// 		"stateMutability": "view",
+// 		"type": "function"
+// 	},
+// 	{
+// 		"stateMutability": "payable",
+// 		"type": "receive"
+// 	}
+// ];
+
+const poolContractAddress = '0x27a103f22Fd25033eD660a338bBe918c24d0623d'
 
 const poolAbi = [
+	{
+		"inputs": [
+			{
+				"internalType": "uint256",
+				"name": "amountInUnibit",
+				"type": "uint256"
+			}
+		],
+		"name": "deposit",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
+	{
+		"inputs": [
+			{
+				"internalType": "string",
+				"name": "betChoice",
+				"type": "string"
+			}
+		],
+		"name": "placeBet",
+		"outputs": [],
+		"stateMutability": "nonpayable",
+		"type": "function"
+	},
 	{
 		"inputs": [
 			{
@@ -366,6 +500,10 @@ const poolAbi = [
 		"type": "fallback"
 	},
 	{
+		"stateMutability": "payable",
+		"type": "receive"
+	},
+	{
 		"inputs": [],
 		"name": "MAX_PLAYERS",
 		"outputs": [
@@ -376,19 +514,6 @@ const poolAbi = [
 			}
 		],
 		"stateMutability": "view",
-		"type": "function"
-	},
-	{
-		"inputs": [
-			{
-				"internalType": "uint256",
-				"name": "amountInUnibit",
-				"type": "uint256"
-			}
-		],
-		"name": "deposit",
-		"outputs": [],
-		"stateMutability": "nonpayable",
 		"type": "function"
 	},
 	{
@@ -416,8 +541,13 @@ const poolAbi = [
 		"outputs": [
 			{
 				"internalType": "address",
-				"name": "",
+				"name": "wallet",
 				"type": "address"
+			},
+			{
+				"internalType": "string",
+				"name": "betChoice",
+				"type": "string"
 			}
 		],
 		"stateMutability": "view",
@@ -448,17 +578,13 @@ const poolAbi = [
 		],
 		"stateMutability": "view",
 		"type": "function"
-	},
-	{
-		"stateMutability": "payable",
-		"type": "receive"
 	}
-];
+]
 
 const DeductAmtButton = () => {
-	const [wallet, setWallet] = useState('');
-	const [amount, setAmount] = useState('');
+	const [amount, setAmount] = useState(10);
 	const [account, setAccount] = useState('');
+	const [betChoice,setBetChoice] = useState('heads')
 	const [unibitBalance, setUnibitBalance] = useState(0);
 
 	const connectWallet = async () => {
@@ -498,21 +624,26 @@ const DeductAmtButton = () => {
 	
 			// Ensure amount is in correct units (wei)
 			const amountInWei = web3.utils.toWei(amount.toString(), 'ether');
+
+			console.log(poolContract.methods)
 	
 			const approveTx = await unibitToken.methods.approve(poolContractAddress, amountInWei).send({ from: fromAddress });
 			console.log('Approval transaction:', approveTx);
-			console.log(amountInWei)
 			
 			const depositTx = await poolContract.methods.deposit(amountInWei).send({ from: fromAddress });
 			console.log('Deposit transaction:', depositTx);
-			console.log(amountInWei)
+
+			const betTx = await poolContract.methods.placeBet(betChoice).send({ from: fromAddress });
+			console.log('Bet transaction:', betTx);
 	
-			alert('Transaction successful!');
+			// alert('Transaction successful!');
 		} catch (error) {
 			console.error('Error:', error);
 			alert('Transaction failed!');
 		}
 	};
+
+	console.log(betChoice)
 
 	return (
 		<div className="flex flex-col gap-4">
@@ -527,8 +658,11 @@ const DeductAmtButton = () => {
 				)}
 			</div>
 			<div className='pt-64 flex gap-3'>
-				<input type="text" placeholder="Wallet Address" value={wallet} onChange={(e) => setWallet(e.target.value)} />
 				<input type="text" placeholder="Amount in Unibit" value={amount} onChange={(e) => setAmount(e.target.value)} />
+				<select onChange={e=>setBetChoice(e.target.value)} id="">
+					<option value="heads">heads</option>
+					<option value="tails">tails</option>
+				</select>
 				<button className='btn' onClick={handleDeductAmt}>Deduct Amount</button>
 			</div>
 		</div>

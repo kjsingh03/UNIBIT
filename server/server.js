@@ -12,9 +12,9 @@ const io = socketIo(server, {
   },
 });
 
-const MAX_PLAYERS = 3;
+const MAX_PLAYERS = 30;
 const MIN_PLAYERS_TO_START = 2;
-const START_GAME_DELAY = 5000; // 15 seconds
+const START_GAME_DELAY = 10000;
 
 const rooms = {
   'room1': { players: [], readyPlayers: [], playerChoices: {}, betAmount: 1, startGameTimer: null },
@@ -24,24 +24,23 @@ const rooms = {
 
 app.use(cors());
 
-const getRoom = (roomId) => rooms[roomId];
+const getRoom = (roomName) => rooms[roomName];
 
-const startGame = (roomId) => {
-  const room = getRoom(roomId);
+const startGame = (roomName) => {
+  const room = getRoom(roomName);
 
   if (room.startGameTimer) {
     clearTimeout(room.startGameTimer);
     room.startGameTimer = null;
   }
-  
-    room.players.forEach(player => {
-      if (!room.readyPlayers.includes(player.id)) {
-        io.to(player.id).emit('removePlayer');
-        }
-    });
 
-  room.players = room.players.filter(player => room.readyPlayers.includes(player.id));
+  room.players.forEach(player => {
+    if (!room.readyPlayers.includes(player.id)) {
+      io.to(player.id).emit('removePlayer');
+    }
+  });
 
+  // room.players = room.players.filter(player => room.readyPlayers.includes(player.id));
 
   if (room.readyPlayers.length >= MIN_PLAYERS_TO_START) {
     room.players.forEach(player => {
@@ -49,11 +48,13 @@ const startGame = (roomId) => {
       room.playerChoices[player.id] = betChoice;
     });
 
-    io.to(roomId).emit('playerList', room.players);
-    io.to(roomId).emit('startCoinFlip');
-    io.to(roomId).emit('gameStarted', { betAmount: room.betAmount, playerChoices: room.playerChoices });
+    room.readyPlayers = room.players.filter(player => room.readyPlayers.includes(player.id));
 
-    room.readyPlayers = [];
+    io.to(roomName).emit('playerList', room.players);
+    room.readyPlayers.forEach(player => {
+      io.to(player.id).emit('startCoinFlip');
+    });
+
     room.playerChoices = {};
   } else {
     room.readyPlayers = [];
@@ -62,21 +63,29 @@ const startGame = (roomId) => {
 };
 
 io.on('connection', (socket) => {
-  socket.on('joinRoom', ({ roomId, username }) => {
-    const room = getRoom(roomId);
+
+  socket.on('enterRoom', ({ roomName }) => {
+    const room = getRoom(roomName);
+    console.log(room.players)
+    io.to(roomName).emit('playerList', room.players);
+    io.to(roomName).emit('readyPlayers', room.readyPlayers);
+  })
+
+  socket.on('joinRoom', ({ roomName, username }) => {
+    const room = getRoom(roomName);
     if (room.players.length >= MAX_PLAYERS) {
       socket.emit('roomFull');
       return;
     }
 
     room.players.push({ id: socket.id, name: username });
-    socket.join(roomId);
-    io.to(roomId).emit('playerList', room.players);
-    io.to(roomId).emit('readyPlayers', room.readyPlayers);
+    socket.join(roomName);
+    io.to(roomName).emit('playerList', room.players);
+    io.to(roomName).emit('readyPlayers', room.readyPlayers);
     io.to(socket.id).emit('joinedRoom', true);
 
     socket.on('setReady', () => {
-      const room = getRoom(roomId);
+      const room = getRoom(roomName);
 
       if (!room.readyPlayers.includes(socket.id)) {
         room.readyPlayers.push(socket.id);
@@ -84,30 +93,32 @@ io.on('connection', (socket) => {
         room.readyPlayers = room.readyPlayers.filter(id => id !== socket.id);
       }
 
-      io.to(roomId).emit('readyPlayers', room.readyPlayers);
+      io.to(roomName).emit('readyPlayers', room.readyPlayers);
 
       if (room.readyPlayers.length === MAX_PLAYERS) {
-        clearTimeout(room.startGameTimer); // Clear any existing start game timer
-        startGame(roomId); // Start the game immediately
+        clearTimeout(room.startGameTimer);
+        startGame(roomName);
       }
 
       if (room.readyPlayers.length >= MIN_PLAYERS_TO_START && !room.startGameTimer) {
+        io.to(roomName).emit('startGameTimer', START_GAME_DELAY / 1000)
         room.startGameTimer = setTimeout(() => {
-          startGame(roomId); // Start the game after the delay
+          startGame(roomName);
         }, START_GAME_DELAY);
       }
 
       if (room.readyPlayers.length < MIN_PLAYERS_TO_START && room.startGameTimer) {
+        io.to(roomName).emit('startGameTimer', 0)
         clearTimeout(room.startGameTimer);
         room.startGameTimer = null;
       }
     });
 
     socket.on('chooseSide', (choice) => {
-      const room = getRoom(roomId);
+      const room = getRoom(roomName);
       room.playerChoices[socket.id] = choice;
 
-      if (Object.keys(room.playerChoices).length === room.players.length) {
+      if (Object.keys(room.playerChoices).length === room.readyPlayers.length) {
         const result = Math.random() < 0.5 ? 'heads' : 'tails';
         const winners = [];
         const losers = [];
@@ -120,11 +131,11 @@ io.on('connection', (socket) => {
           }
         }
 
-        const winnings = winners.length > 0 ? (room.betAmount * room.players.length / winners.length) - room.betAmount : 0;
+        const winnings = winners.length > 0 ? (room.betAmount * room.readyPlayers.length / winners.length) - room.betAmount : 0;
         const losses = room.betAmount;
 
-        io.to(roomId).emit('gameResult', { result, winners, losers, winnings, losses });
-        io.to(roomId).emit('playerList', room.players.map(player => ({
+        io.to(roomName).emit('gameResult', { result, winners, losers, winnings, losses });
+        io.to(roomName).emit('playerList', room.players.map(player => ({
           id: player.id,
           name: player.name,
           betChoice: room.playerChoices[player.id] || null
@@ -136,7 +147,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('disconnect', () => {
-      const room = getRoom(roomId);
+      const room = getRoom(roomName);
       room.players = room.players.filter(player => player.id !== socket.id);
       room.readyPlayers = room.readyPlayers.filter(id => id !== socket.id);
       delete room.playerChoices[socket.id];
@@ -146,12 +157,12 @@ io.on('connection', (socket) => {
         room.playerChoices = {};
       }
 
-      io.to(roomId).emit('playerList', room.players);
-      io.to(roomId).emit('readyPlayers', room.readyPlayers);
+      io.to(roomName).emit('playerList', room.players);
+      io.to(roomName).emit('readyPlayers', room.readyPlayers);
     });
 
-    socket.on('leaveRoom', ({ roomId }) => {
-      const room = getRoom(roomId);
+    socket.on('leaveRoom', ({ roomName }) => {
+      const room = getRoom(roomName);
       room.players = room.players.filter(player => player.id !== socket.id);
       room.readyPlayers = room.readyPlayers.filter(id => id !== socket.id);
       delete room.playerChoices[socket.id];
@@ -161,17 +172,20 @@ io.on('connection', (socket) => {
         room.playerChoices = {};
       }
 
-      io.to(roomId).emit('playerList', room.players);
-      io.to(roomId).emit('readyPlayers', room.readyPlayers);
+      io.to(roomName).emit('playerList', room.players);
+      io.to(roomName).emit('readyPlayers', room.readyPlayers);
+      io.to(roomName).emit('startGameTimer', 0);
+      if (room.readyPlayers.length < MIN_PLAYERS_TO_START && room.startGameTimer) {
+        clearTimeout(room.startGameTimer);
+        room.startGameTimer = null;
+      }
     });
 
-    socket.on('resetGame', ({ roomId }) => {
-      const room = getRoom(roomId);
+    socket.on('resetGame', ({ roomName }) => {
+      const room = getRoom(roomName);
       room.readyPlayers = [];
       room.players = [];
       room.playerChoices = {};
-
-      io.to(roomId).emit('resetGame');
     });
   });
 });
