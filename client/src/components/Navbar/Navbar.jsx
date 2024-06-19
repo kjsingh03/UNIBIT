@@ -398,7 +398,7 @@ function Navbar() {
 	}
 
 	return (
-		<nav className='w-full fixed bg-[#00000066] '>
+		<nav className='w-full fixed bg-[#00000066] h-[5rem]'>
 			<div className="w-[95%] md:w-[80%] mx-auto flex items-center justify-between ">
 				<Link to="/" className="w-32">
 					<img src={hlogo} className='w-full -full object-cover' alt="UIBT Logo" />
@@ -408,7 +408,6 @@ function Navbar() {
 				</div>
 				<ul className='navbar flex bg-[#000000] z-40 w-64 flex-col justify-center fixed top-0 right-0 h-screen translate-x-[100%] md:translate-x-0 md:bg-transparent md:w-auto md:flex-row md:justify-normal md:static md:h-auto items-center gap-4'>
 					<li><Link to="/">Home</Link></li>
-					<li><Link to="/">{userBalance} $UIBT</Link></li>
 					<div>
 						{account ? (
 							<div>
