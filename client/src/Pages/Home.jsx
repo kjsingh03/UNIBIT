@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
-import { setLoginState } from '../store/slice'
 import { PlayerCard } from '../components'
 import { coinLogo, hlogo, logo } from '../assets'
 

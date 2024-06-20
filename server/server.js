@@ -5,6 +5,8 @@ const socketIo = require('socket.io');
 const cors = require('cors');
 const { Web3 } = require('web3');
 const PoolContractABI = require('./PoolContractABI.json'); // Ensure ABI is in JSON format
+const tls = require('tls');
+tls.TLSSocket.prototype.setMaxListeners(20);
 
 const app = express();
 const server = http.createServer(app);
@@ -24,12 +26,12 @@ const ownerAddress = process.env.OWNER_ADDRESS;
 
 const MAX_PLAYERS = 3;
 const MIN_PLAYERS_TO_START = 2;
-const START_GAME_DELAY = 10000;
+const START_GAME_DELAY = 20000;
 
 const rooms = {
-  'room1': { players: [], readyPlayers: [], playerChoices: {}, betAmount: 100, startGameTimer: null, result: Math.random() < 0.5 ? 'heads' : 'tails', random: Math.floor(Math.random() * new Date().getTime()),roomCreated:false },
-  'room2': { players: [], readyPlayers: [], playerChoices: {}, betAmount: 10000, startGameTimer: null, result: Math.random() < 0.5 ? 'heads' : 'tails', random: Math.floor(Math.random() * new Date().getTime()),roomCreated:false },
-  'room3': { players: [], readyPlayers: [], playerChoices: {}, betAmount: 100000, startGameTimer: null, result: Math.random() < 0.5 ? 'heads' : 'tails', random: Math.floor(Math.random() * new Date().getTime()),roomCreated:false },
+  'room1': { players: [], readyPlayers: [], playerChoices: {}, betAmount: 1, startGameTimer: null, result: Math.random() < 0.5 ? 'heads' : 'tails', roomId: 891871063280, roomCreated: false },
+  'room2': { players: [], readyPlayers: [], playerChoices: {}, betAmount: 10000, startGameTimer: null, result: Math.random() < 0.5 ? 'heads' : 'tails', roomId: 278171202432, roomCreated: false },
+  'room3': { players: [], readyPlayers: [], playerChoices: {}, betAmount: 100000, startGameTimer: null, result: Math.random() < 0.5 ? 'heads' : 'tails', roomId: 697236497826, roomCreated: false },
 };
 
 let receipt;
@@ -124,7 +126,7 @@ const decideWon = async (roomId, walletAddress) => {
 
     return receipt;
   } catch (error) {
-    console.error('Error while creating room:', error.message);
+    console.error('Error while deciding winners', error.message);
   }
 };
 
@@ -150,11 +152,18 @@ const distributePool = async (roomId) => {
 
     return receipt;
   } catch (error) {
-    console.error('Error while creating room:', error.message);
+    console.error('Error while distributing pool', error.message);
   }
 };
 
 io.on('connection', (socket) => {
+
+  const cleanupListeners = () => {
+    socket.removeAllListeners('setReady');
+    socket.removeAllListeners('chooseSide');
+    socket.removeAllListeners('disconnect');
+    socket.removeAllListeners('leaveRoom');
+  };
 
   socket.on('enterRoom', ({ roomName }) => {
     const room = getRoom(roomName);
@@ -163,6 +172,8 @@ io.on('connection', (socket) => {
   });
 
   socket.on('joinRoom', async ({ roomName, username }) => {
+    cleanupListeners();
+
     const room = getRoom(roomName);
     if (room.players.length >= MAX_PLAYERS) {
       socket.emit('roomFull');
@@ -175,14 +186,7 @@ io.on('connection', (socket) => {
     io.to(roomName).emit('readyPlayers', room.readyPlayers);
     io.to(socket.id).emit('joinedRoom', true);
 
-    if (room.players.length === 1) {
-      receipt = await createRoom(room.random);
-      io.to(roomName).emit('roomIdGenerated', { random: room.random, result: room.result });
-      room.roomCreated=true
-    };
-
-    if(room.roomCreated)
-      io.to(roomName).emit('roomIdGenerated', { random: room.random, result: room.result });
+    io.to(roomName).emit('roomIdGenerated', { roomId: room.roomId, result: room.result });
 
     socket.on('setReady', () => {
       const room = getRoom(roomName);
@@ -191,8 +195,6 @@ io.on('connection', (socket) => {
       } else {
         room.readyPlayers = room.readyPlayers.filter(id => id !== socket.id);
       }
-
-      io.to(roomName).emit('roomIdGenerated', { result: room.result, random: room.random });
 
       io.to(roomName).emit('readyPlayers', room.readyPlayers);
 
@@ -223,8 +225,6 @@ io.on('connection', (socket) => {
         const winners = [];
         const losers = [];
 
-        let tempWin;
-
         for (let playerId in room.playerChoices) {
           if (room.playerChoices[playerId] === room.result) {
             winners.push(playerId);
@@ -243,21 +243,18 @@ io.on('connection', (socket) => {
         })));
 
         io.to(roomName).emit('gameResult', { result: room.result, winners, losers, winnings, losses });
-        
+
         for (let playerId in room.playerChoices) {
           if (room.playerChoices[playerId] === room.result) {
-            tempWin = await decideWon(room.random, walletAddress)
-            console.log(tempWin)
+            await decideWon(room.roomId, walletAddress);
           }
         }
 
-        const result = await distributePool(room.random)
+        await distributePool(room.roomId);
 
         room.readyPlayers = [];
         room.playerChoices = {};
-        room.result = Math.random() < 0.5 ? 'heads' : 'tails'
-        room.random = Math.floor(Math.random() * new Date().getTime())
-        room.roomCreated=false
+        room.result = Math.random() < 0.5 ? 'heads' : 'tails';
       }
     });
 
@@ -274,9 +271,10 @@ io.on('connection', (socket) => {
 
       io.to(roomName).emit('playerList', room.players);
       io.to(roomName).emit('readyPlayers', room.readyPlayers);
+      cleanupListeners();
     });
 
-    socket.on('leaveRoom', ({ roomName }) => {
+    socket.on('leaveRoom', async ({ roomName }) => {
       const room = getRoom(roomName);
       room.players = room.players.filter(player => player.id !== socket.id);
       room.readyPlayers = room.readyPlayers.filter(id => id !== socket.id);
@@ -285,6 +283,8 @@ io.on('connection', (socket) => {
       if (room.players.length === 0) {
         room.readyPlayers = [];
         room.playerChoices = {};
+        await decideWon(room.roomId, ownerAddress);
+        await distributePool(room.roomId);
       }
 
       io.to(roomName).emit('playerList', room.players);
@@ -294,6 +294,8 @@ io.on('connection', (socket) => {
         clearTimeout(room.startGameTimer);
         room.startGameTimer = null;
       }
+
+      cleanupListeners();
     });
   });
 });
