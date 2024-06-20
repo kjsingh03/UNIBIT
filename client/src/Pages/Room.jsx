@@ -58,7 +58,7 @@ function Room() {
 
 	useEffect(() => {
 		if (!socketRef.current) {
-			socketRef.current = io('http://localhost:3000');
+			socketRef.current = io('https://unibitcoin-4.onrender.com');
 		}
 
 		const socket = socketRef.current;
@@ -80,7 +80,7 @@ function Room() {
 
 	useEffect(() => {
 		if (!socketRef.current) {
-			socketRef.current = io('http://localhost:3000');
+			socketRef.current = io('https://unibitcoin-4.onrender.com');
 		}
 
 		const socket = socketRef.current;
