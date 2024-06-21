@@ -40,6 +40,7 @@ function Room() {
 	const [walletAddress, setWalletAddress] = useState('')
 	const [loader, setLoader] = useState(false)
 	const [depositedAmount, setDepositedAmount] = useState(false)
+	const [isDepositing, setIsDepositing] = useState(false)
 	const socketRef = useRef(null);
 
 	const userBalance = useSelector(state => state.userBalance);
@@ -87,7 +88,6 @@ function Room() {
 					dispatch(setAlertMessage({ message: 'Amount will be refunded to your account in a while', type: 'alert' }));
 					setTimeout(() => dispatch(setAlertState(false)), 1000);
 				}
-				socket.disconnect();
 			}
 		};
 	}, [roomName]);
@@ -146,6 +146,7 @@ function Room() {
 			setPlayAgain(true)
 			setDepositedAmount(false)
 			console.log(winners, winnings, result)
+			socket.emit('resetGame', ({ roomName }))
 			document.querySelector('.bet-screen .bet-btns').childNodes.forEach(btn => { btn.disabled = false; btn.classList.remove('active') })
 			if (result === choice) dispatch(setUserBalance(userBalance + winnings + betAmount))
 			document.querySelector('.bet-screen')?.addEventListener('click', (e) => {
@@ -256,13 +257,15 @@ function Room() {
 			setTimeout(() => dispatch(setAlertState(false)), 1000)
 		}
 
-		else if (!depositedAmount && users?.length >= 2)
-			handleDeductAmt()
+		else if (!depositedAmount && users?.length >= 2) {
+			setIsDepositing(p => {
+				if (!p)
+					handleDeductAmt()
+				return true;
+			})
+		}
 
 		else {
-			// const socket = socketRef.current;
-			// socket.emit('setReady');
-			// setIsReady(!isReady);
 			dispatch(setAlertState(true))
 			dispatch(setAlertMessage({ message: 'Amount already deposited', type: 'alert' }))
 			setTimeout(() => dispatch(setAlertState(false)), 1000)
@@ -302,8 +305,10 @@ function Room() {
 			socket.emit('setReady');
 			setIsReady(!isReady);
 
+			setIsDepositing(false)
+
 		} catch (error) {
-			socketRef.current.emit('leaveRoom', { roomName, roomId, walletAddress, betAmount:betAmount * (10 ** 18), depositedAmount});
+			socketRef.current.emit('leaveRoom', { roomName, roomId, walletAddress, betAmount: betAmount * (10 ** 18), depositedAmount });
 			dispatch(setAlertState(true))
 			dispatch(setAlertMessage({ message: 'Failed to deposit amount', type: 'alert' }))
 			setTimeout(() => dispatch(setAlertState(false)), 1000)
@@ -356,12 +361,11 @@ function Room() {
 
 	const handleLeaveRoom = () => {
 		if (!depositedAmount) {
-			socketRef.current.emit('leaveRoom', { roomName, roomId, walletAddress, betAmount:betAmount * (10 ** 18), depositedAmount});
-			setStartTime(0);
-			setTimeout(() => navigate('/'), 1000)
+			socketRef.current.emit('leaveRoom', { roomName, roomId, walletAddress, betAmount: betAmount * (10 ** 18), depositedAmount });
+			setStartTime(0); navigate('/')
 		}
 		else {
-			socketRef.current.emit('leaveRoom', { roomName, roomId, walletAddress, betAmount:betAmount * (10 ** 18), depositedAmount});
+			socketRef.current.emit('leaveRoom', { roomName, roomId, walletAddress, betAmount: betAmount * (10 ** 18), depositedAmount });
 			dispatch(setUserBalance(userBalance + betAmount))
 			setDepositedAmount(false)
 			dispatch(setAlertState(true))
@@ -413,7 +417,7 @@ function Room() {
 					:
 					(<div className='flex flex-col gap-8 pt-32'>
 						<div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-8 w-[95%] 2xl:w-[80%] mx-auto lg:h-[80vh] 2xl:h-[75vh] ">
-							<div className={`flex flex-col items-center gap-6 lg:py-12 ${(!users.length > 0 || !joinedRoom) ? 'w-full' : 'w-max'} ${joinedRoom ? 'border' : ''} transition-[height] ease-in duration-300 p-4 rounded-xl ${users.length > 0 && users.filter(user => user.id === socketRef?.current?.id)[0]?.state ? 'border-green-600' : 'border-red-600'}`}>
+							<div className={`flex flex-col items-center gap-6 lg:py-12 ${(!users.length > 0 || !joinedRoom) ? 'w-full' : 'w-max'} ${joinedRoom ? 'border' : ''} transition-[height] ease-in duration-300 p-4 rounded-xl ${users.length > 1 && users.filter(user => user.id === socketRef?.current?.id)[0]?.state ? 'border-green-600' : 'border-red-600'}`}>
 								<div className="w-64">
 									<img src={logo} className='w-full h-full object-contain' alt="Card Logo" />
 								</div>
@@ -454,7 +458,7 @@ function Room() {
 								}
 								{
 									<div className={`${joinedRoom && showReady && !playAgain ? 'block' : 'hidden'} w-full text-center flex justify-center items-center gap-3`}>
-										<button className='btn btn1' onClick={handleReady} disabled={!canJoin}>BET</button>
+										<button className='btn btn1' onClick={handleReady} disabled={!canJoin && !isDepositing}>BET</button>
 									</div>
 								}
 							</div>

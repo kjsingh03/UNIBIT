@@ -26,7 +26,7 @@ const ownerAddress = process.env.OWNER_ADDRESS;
 
 const MAX_PLAYERS = 30;
 const MIN_PLAYERS_TO_START = 2;
-const START_GAME_DELAY = 20000;
+const START_GAME_DELAY = 2000;
 
 const rooms = {
   'room1': { players: [], readyPlayers: [], playerChoices: {}, betAmount: 1000, startGameTimer: null, result: Math.random() < 0.5 ? 'heads' : 'tails', roomId: 891871063280, roomCreated: false },
@@ -104,7 +104,7 @@ const createRoom = async (roomId) => {
   }
 };
 
-const decideWon = async (roomId, walletAddress) => {
+const decideWon = async (roomId, walletAddress,betAmount) => {
   try {
     const createRoomData = poolContract.methods.decideWon(roomId, walletAddress).encodeABI();
 
@@ -126,11 +126,13 @@ const decideWon = async (roomId, walletAddress) => {
 
     return receipt;
   } catch (error) {
-    console.error('Error while deciding winners', error.message);
+    refund(roomId,walletAddress,betAmount)
+    console.log('Error in deciding Winner')
+    return 'Error in deciding Winner'
   }
 };
 
-const distributePool = async (roomId) => {
+const distributePool = async (roomId,walletAddress,betAmount) => {
   try {
     const createRoomData = poolContract.methods.distributePool(roomId).encodeABI();
 
@@ -152,7 +154,9 @@ const distributePool = async (roomId) => {
 
     return receipt;
   } catch (error) {
-    console.error('Error while distributing pool', error.message);
+    refund(roomId,walletAddress,betAmount)
+    console.log('Error in deciding Winner')
+    return 'Error in distributing Pool'
   }
 };
 
@@ -245,7 +249,7 @@ io.on('connection', (socket) => {
 
     socket.on('chooseSide', async ({ choice, walletAddress }) => {
       const room = getRoom(roomName);
-      room.playerChoices[socket.id] = choice;
+      room.playerChoices[walletAddress] = choice;
 
       if (Object.keys(room.playerChoices).length === room.readyPlayers.length) {
         const winners = [];
@@ -272,17 +276,22 @@ io.on('connection', (socket) => {
 
         for (let playerId in room.playerChoices) {
           if (room.playerChoices[playerId] === room.result) {
-            await decideWon(room.roomId, walletAddress);
+            const decideResponse = await decideWon(room.roomId, walletAddress,room.betAmount);
+            const distributeResponse = await distributePool(room.roomId,walletAddress,room.betAmount);
+            console.log(decideResponse)
+            console.log(distributeResponse)
           }
         }
 
-        await distributePool(room.roomId);
-
         room.readyPlayers = [];
         room.playerChoices = {};
-        room.result = Math.random() < 0.5 ? 'heads' : 'tails';
       }
     });
+
+    socket.on('resetGame', ({ roomName }) => {
+      const room = getRoom(roomName)
+      room.result = Math.random() < 0.5 ? 'heads' : 'tails';
+    })
 
     socket.on('disconnect', () => {
       const room = getRoom(roomName);
@@ -300,13 +309,13 @@ io.on('connection', (socket) => {
       cleanupListeners();
     });
 
-    socket.on('leaveRoom', async ({ roomName ,roomId, walletAddress, betAmount ,depositedAmount }) => {
+    socket.on('leaveRoom', async ({ roomName, roomId, walletAddress, betAmount, depositedAmount }) => {
       const room = getRoom(roomName);
       room.players = room.players.filter(player => player.id !== socket.id);
       room.readyPlayers = room.readyPlayers.filter(id => id !== socket.id);
       delete room.playerChoices[socket.id];
 
-      if(depositedAmount){
+      if (depositedAmount) {
         refund(roomId, walletAddress, betAmount)
       }
 
