@@ -269,17 +269,21 @@ io.on('connection', (socket) => {
         io.to(roomName).emit('playerList', room.players.map(player => ({
           id: player.id,
           name: player.name,
-          betChoice: room.playerChoices[player.id] || null
+          betChoice: room.playerChoices[walletAddress] || null
         })));
 
         io.to(roomName).emit('gameResult', { result: room.result, winners, losers, winnings, losses });
 
-        for (let playerId in room.playerChoices) {
-          if (room.playerChoices[playerId] === room.result) {
-            const decideResponse = await decideWon(room.roomId, walletAddress,room.betAmount);
-            const distributeResponse = await distributePool(room.roomId,walletAddress,room.betAmount);
+        if(winners.length===0){
+          const decideResponse = await decideWon(room.roomId, ownerAddress,room.betAmount);
+          console.log('transferred to owner')
+        }
+        else{
+          for (let winner in winners) {
+              const decideResponse = await decideWon(room.roomId, winners[winner],room.betAmount);
           }
         }
+        const distributeResponse = await distributePool(room.roomId,walletAddress,room.betAmount);
 
         room.readyPlayers = [];
         room.playerChoices = {};

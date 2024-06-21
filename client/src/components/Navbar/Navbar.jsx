@@ -27,7 +27,7 @@ function Navbar() {
 
 				const balance = await unibitTokenContract.methods.balanceOf(accounts[0]).call();
 
-				dispatch(setUserBalance(parseInt(balance) / 10 ** 18));
+				dispatch(setUserBalance((parseInt(balance) / 10 ** 18).toFixed(2)));
 				dispatch(setLoginState(true))
 
 			} catch (error) {
@@ -64,8 +64,8 @@ function Navbar() {
 	}
 
 	return (
-		<nav className='w-full fixed bg-[#00000066] h-[5rem]'>
-			<div className="w-[95%] md:w-[80%] mx-auto flex items-center justify-between ">
+		<nav className='w-full fixed bg-[#00000066]'>
+			<div className="w-[95%] md:w-[80%] mx-auto flex items-center justify-between h-24">
 				<Link to="/" className="w-32">
 					<img src={hlogo} className='w-full -full object-cover' alt="UIBT Logo" />
 				</Link>

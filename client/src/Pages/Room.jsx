@@ -145,6 +145,7 @@ function Room() {
 			setIsFlipping(false);
 			setPlayAgain(true)
 			setDepositedAmount(false)
+			setshowReady(true)
 			console.log(winners, winnings, result)
 			socket.emit('resetGame', ({ roomName }))
 			document.querySelector('.bet-screen .bet-btns').childNodes.forEach(btn => { btn.disabled = false; btn.classList.remove('active') })
@@ -248,6 +249,20 @@ function Room() {
 			}
 		})
 	}, [showNameModal])
+
+	useEffect(() => {
+		let refundTimeInterval;
+		if (users.length === 1 && depositedAmount) {
+			refundTimeInterval = setTimeout(() => {
+				dispatch(setAlertState(true))
+				dispatch(setAlertMessage({ message: 'You may leave room & get refunded', type: 'alert' }))
+				setTimeout(() => dispatch(setAlertState(false)), 5000)
+			}, 20000)
+		}
+		return () => { 
+			clearTimeout(refundTimeInterval) 
+		}
+	}, [users])
 
 	const handleReady = () => {
 
@@ -370,8 +385,8 @@ function Room() {
 			setDepositedAmount(false)
 			dispatch(setAlertState(true))
 			dispatch(setAlertMessage({ message: 'Amount will be refunded to your account in a while', type: 'alert' }))
-			setTimeout(() => dispatch(setAlertState(false)), 1000)
-			setTimeout(() => navigate('/'), 1000)
+			setTimeout(() => dispatch(setAlertState(false)), 2000)
+			setTimeout(() => navigate('/'), 2000)
 		}
 
 	};
@@ -383,7 +398,6 @@ function Room() {
 		else if (userBalance > betAmount && username) {
 			setGameResult(null);
 			setPlayAgain(false);
-			setshowReady(true)
 			setDepositedAmount(false)
 			users.forEach(user => user.betChoice = null)
 			handleReady()
@@ -396,12 +410,11 @@ function Room() {
 	};
 
 	if (roomFull) {
-		return <div className='pt-32 text-2xl'>Room is full. Please try again later.</div>;
+		return <div className='pt-32 text-2xl min-h-screen'>Room is full. Please try again later.</div>;
 	}
 
 	return (
 		<>
-
 			{
 				loader ?
 					<div className="pt-32 h-[90vh] bg-[#0000004b] w-screen z-50 fixed top-[5rem] left-0 flex justify-center items-center">
@@ -415,9 +428,9 @@ function Room() {
 						</div>
 					</div>
 					:
-					(<div className='flex flex-col gap-8 pt-32'>
-						<div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-8 w-[95%] 2xl:w-[80%] mx-auto lg:h-[80vh] 2xl:h-[75vh] ">
-							<div className={`flex flex-col items-center gap-6 lg:py-12 ${(!users.length > 0 || !joinedRoom) ? 'w-full' : 'w-max'} ${joinedRoom ? 'border' : ''} transition-[height] ease-in duration-300 p-4 rounded-xl ${users.length > 1 && users.filter(user => user.id === socketRef?.current?.id)[0]?.state ? 'border-green-600' : 'border-red-600'}`}>
+					(<div className='flex flex-col gap-8 pt-32 min-h-screen'>
+						<div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-8 w-[95%] md:w-[80%] mx-auto lg:h-[80vh] 2xl:h-[75vh] ">
+							<div className={`flex flex-col items-center gap-6 lg:py-12 ${(!users.length > 0 || !joinedRoom) ? 'w-full' : 'w-max'} ${joinedRoom ? 'border' : ''} transition-[height] ease-in duration-300 p-4 rounded-xl ${users.length > 1 && users.filter(user => user.id === socketRef?.current?.id)[0]?.state ? 'border-green-600' : 'border-red-600'} ${users?.length === 0 ? 'border-transparent' : ''}`}>
 								<div className="w-64">
 									<img src={logo} className='w-full h-full object-contain' alt="Card Logo" />
 								</div>
@@ -464,7 +477,7 @@ function Room() {
 							</div>
 							{
 								users.length > 0 && joinedRoom &&
-								<div className="flex flex-col gap-8 w-full lg:w-[50vw]">
+								<div className="flex flex-col gap-8 w-full lg:w-full min-h-[30rem]">
 									<div className="w-full flex items-center justify-end h-10">
 										{
 											startTime !== 0 && !showModal && !gameResult &&
@@ -474,7 +487,7 @@ function Room() {
 											</div>
 										}
 									</div>
-									<div className="grid grid-cols-2 2xl:grid-cols-3 gap-4 overflow-y-auto px-2">
+									<div className="grid grid-cols-2 2xl:grid-cols-3 gap-4 overflow-y-auto px-2 min-h-[20rem]">
 										{
 											users?.filter(user => user.id !== socketRef.current.id)?.length > 0 &&
 											users?.filter(user => user.id !== socketRef.current.id).map((user, index) => (
@@ -507,10 +520,12 @@ function Room() {
 										}
 										{
 											users?.filter(user => user.id !== socketRef.current.id).length === 0 &&
-											<div className="col-span-3 w-full text-center text-xl">Please wait until others join</div>
+											<div className="col-span-3 w-full text-center text-xl h-full flex flex-col justify-center items-center">
+												<p className="">No Users</p>
+											</div>
 										}
 									</div>
-									<div className={`${joinedRoom && showReady ? 'block' : 'hidden'} w-full text-end flex justify-end items-center gap-3`}>
+									<div className={`${joinedRoom && showReady ? 'block' : 'hidden'} w-full text-start flex justify-start items-center gap-3`}>
 										<button className='btn btn2' onClick={handleLeaveRoom}>Leave Room</button>
 									</div>
 								</div>
@@ -537,20 +552,23 @@ function Room() {
 									<div className={`side heads-img ${gameResult?.result === 'heads' ? 'show' : ''}`}></div>
 									<div className={`side tails-img ${gameResult?.result === 'tails' ? 'show' : ''}`}></div>
 								</div>
-								<div className="flex gap-2 bet-btns">
-									<button className={`btn btn1 bet-btn `} onClick={handleChoice}>Heads</button>
-									<button className={`btn btn1 bet-btn `} onClick={handleChoice}>Tails</button>
-								</div>
+								{
+									!gameResult &&
+									<div className="flex gap-2 bet-btns">
+										<button className={`btn btn1 bet-btn `} onClick={handleChoice}>Heads</button>
+										<button className={`btn btn1 bet-btn `} onClick={handleChoice}>Tails</button>
+									</div>
+								}
 								{
 									gameResult &&
 									<div className="h-8">
 										{
 											gameResult?.result === choice && gameResult &&
-											<p className='text-2xl font-semibold'>Congrats! You won {gameResult?.winnings} $UIBT</p>
+											<p className='text-2xl font-semibold'>{gameResult.winnings > 0 ? `Congrats! You won ${gameResult.winnings} $UIBT` : `Tie! You will get refunded`}</p>
 										}
 										{
 											gameResult?.result !== choice && gameResult &&
-											<p className='text-2xl font-semibold'>Oops! You got rugged {gameResult?.losses} $UIBT</p>
+											<p className='text-2xl font-semibold'>Oops! You got rugged {gameResult.losses} $UIBT</p>
 										}
 									</div>
 								}
