@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import io from 'socket.io-client';
 import { useDispatch, useSelector } from 'react-redux';
 import { logo } from '../assets';
-import { setUserBalance } from '../store/slice';
+import { setAlertMessage, setAlertState, setUserBalance } from '../store/slice';
 import { Input } from '../components';
 import Web3 from 'web3';
 import uibtABI from '../utils/unibit.json'
@@ -49,7 +49,7 @@ function Room() {
 	const navigate = useNavigate()
 
 	const betAmounts = {
-		'room1': 1,
+		'room1': 1000,
 		'room2': 10000,
 		'room3': 100000,
 	};
@@ -58,13 +58,21 @@ function Room() {
 
 	useEffect(() => {
 		if (!socketRef.current) {
-			socketRef.current = io('https://unibitcoin-4.onrender.com');
+			socketRef.current = io(import.meta.env.VITE_SERVER_URL);
 		}
 
 		const socket = socketRef.current;
 
 		const handleBeforeUnload = () => {
 			socket.emit('leaveRoom', { roomName });
+			if (depositedAmount) {
+				socket.emit('returnAmount', { roomId, walletAddress, betAmount });
+				dispatch(setUserBalance(userBalance + betAmount))
+				setDepositedAmount(false)
+				dispatch(setAlertState(true))
+				dispatch(setAlertMessage({ message: 'Amount will be refunded to your account in a while', type: 'alert' }))
+				setTimeout(() => dispatch(setAlertState(false)), 1000)
+			}
 		};
 
 		window?.addEventListener('beforeunload', handleBeforeUnload);
@@ -73,6 +81,14 @@ function Room() {
 			window.removeEventListener('beforeunload', handleBeforeUnload);
 			if (socket) {
 				socket.emit('leaveRoom', { roomName });
+				if (depositedAmount) {
+					socket.emit('returnAmount', { roomId, walletAddress, betAmount });
+					dispatch(setUserBalance(userBalance + betAmount))
+					setDepositedAmount(false)
+					dispatch(setAlertState(true))
+					dispatch(setAlertMessage({ message: 'Amount will be refunded to your account in a while', type: 'alert' }))
+					setTimeout(() => dispatch(setAlertState(false)), 1000)
+				}
 				socket.disconnect();
 			}
 		};
@@ -80,7 +96,7 @@ function Room() {
 
 	useEffect(() => {
 		if (!socketRef.current) {
-			socketRef.current = io('https://unibitcoin-4.onrender.com');
+			socketRef.current = io(import.meta.env.VITE_SERVER_URL);
 		}
 
 		const socket = socketRef.current;
@@ -117,7 +133,6 @@ function Room() {
 		};
 
 		const handleStartCoinFlip = () => {
-			dispatch(setUserBalance(userBalance - betAmount))
 			setShowModal(true);
 			setIsFlipping(true);
 			setshowReady(false);
@@ -236,18 +251,31 @@ function Room() {
 	}, [showNameModal])
 
 	const handleReady = () => {
-		if (!depositedAmount)
+
+		if (users?.length === 1) {
+			dispatch(setAlertState(true))
+			dispatch(setAlertMessage({ message: 'Please wait until others join', type: 'alert' }))
+			setTimeout(() => dispatch(setAlertState(false)), 1000)
+		}
+
+		else if (!depositedAmount && users?.length >= 2)
 			handleDeductAmt()
+
 		else {
-			const socket = socketRef.current;
-			socket.emit('setReady');
-			setIsReady(!isReady);
+			// const socket = socketRef.current;
+			// socket.emit('setReady');
+			// setIsReady(!isReady);
+			dispatch(setAlertState(true))
+			dispatch(setAlertMessage({ message: 'Amount already deposited', type: 'alert' }))
+			setTimeout(() => dispatch(setAlertState(false)), 1000)
 		}
 	};
 
 	const handleDeductAmt = async () => {
 		if (!window.ethereum) {
-			alert('Please install MetaMask!');
+			dispatch(setAlertState(true))
+			dispatch(setAlertMessage({ message: 'Please install MetaMask!', type: 'alert' }))
+			setTimeout(() => dispatch(setAlertState(false)), 1000)
 			return;
 		}
 
@@ -270,14 +298,17 @@ function Room() {
 
 			setDepositedAmount(true)
 
+			dispatch(setUserBalance(userBalance - betAmount))
+
 			const socket = socketRef.current;
 			socket.emit('setReady');
 			setIsReady(!isReady);
 
 		} catch (error) {
-			console.error('Error:', error);
-			alert('Error connecting to wallet');
 			socketRef.current.emit('leaveRoom', { roomName: roomName });
+			dispatch(setAlertState(true))
+			dispatch(setAlertMessage({ message: 'Failed to deposit amount', type: 'alert' }))
+			setTimeout(() => dispatch(setAlertState(false)), 1000)
 			setTimeout(() => navigate('/'), 1000)
 		}
 	};
@@ -297,11 +328,14 @@ function Room() {
 				handleJoinRoom();
 			}
 			else {
-				alert('Insufficient balance to join the room');
+				dispatch(setAlertState(true))
+				dispatch(setAlertMessage({ message: 'Insufficient balance to join the room', type: 'alert' }))
+				setTimeout(() => dispatch(setAlertState(false)), 1000)
 			}
 		} else {
-			// navigate('/')
-			alert('Kindly Connect Wallet First')
+			dispatch(setAlertState(true))
+			dispatch(setAlertMessage({ message: 'Kindly Connect Wallet First', type: 'alert' }))
+			setTimeout(() => dispatch(setAlertState(false)), 1000)
 		}
 	};
 
@@ -323,10 +357,22 @@ function Room() {
 	};
 
 	const handleLeaveRoom = () => {
-		const socket = socketRef.current;
-		socket.emit('leaveRoom', { roomName: roomName });
-		setStartTime(0);
-		navigate('/')
+		if (!depositedAmount) {
+			socketRef.current.emit('leaveRoom', { roomName: roomName });
+			setStartTime(0);
+			setTimeout(() => navigate('/'), 1000)
+		}
+		else {
+			socketRef.current.emit('leaveRoom', { roomName: roomName });
+			socketRef.current.emit('returnAmount', { roomId, walletAddress, betAmount:betAmount*(10**18) });
+			dispatch(setUserBalance(userBalance + betAmount))
+			setDepositedAmount(false)
+			dispatch(setAlertState(true))
+			dispatch(setAlertMessage({ message: 'Amount will be refunded to your account in a while', type: 'alert' }))
+			setTimeout(() => dispatch(setAlertState(false)), 1000)
+			setTimeout(() => navigate('/'), 1000)
+		}
+
 	};
 
 	const handlePlayAgain = () => {
@@ -342,12 +388,14 @@ function Room() {
 			handleReady()
 		}
 		else {
-			alert('Insufficient balance to join the room');
+			dispatch(setAlertState(true))
+			dispatch(setAlertMessage({ message: 'Insufficient balance to join the room', type: 'alert' }))
+			setTimeout(() => dispatch(setAlertState(false)), 1000)
 		}
 	};
 
 	if (roomFull) {
-		return <div className='pt-32'>Room is full. Please try again later.</div>;
+		return <div className='pt-32 text-2xl'>Room is full. Please try again later.</div>;
 	}
 
 	return (
@@ -409,9 +457,7 @@ function Room() {
 								}
 								{
 									<div className={`${joinedRoom && showReady && !playAgain ? 'block' : 'hidden'} w-full text-center flex justify-center items-center gap-3`}>
-										<button className='btn btn1' onClick={handleReady} disabled={!canJoin}>
-											BET
-										</button>
+										<button className='btn btn1' onClick={handleReady} disabled={!canJoin}>BET</button>
 									</div>
 								}
 							</div>
@@ -460,7 +506,7 @@ function Room() {
 										}
 										{
 											users?.filter(user => user.id !== socketRef.current.id).length === 0 &&
-											<div className="col-span-3 w-full text-center">Please wait till others join</div>
+											<div className="col-span-3 w-full text-center text-xl">Please wait until others join</div>
 										}
 									</div>
 									<div className={`${joinedRoom && showReady ? 'block' : 'hidden'} w-full text-end flex justify-end items-center gap-3`}>

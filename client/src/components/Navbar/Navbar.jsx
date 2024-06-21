@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import Web3 from 'web3';
 import { hlogo } from '../../assets';
 import { Link } from 'react-router-dom';
-import { setUserBalance,setLoginState } from '../../store/slice';
+import { setUserBalance, setLoginState, setAlertMessage, setAlertState } from '../../store/slice';
 import uibtABI from '../../utils/unibit.json'
 
 const unibitTokenABI = uibtABI;
@@ -31,16 +31,21 @@ function Navbar() {
 				dispatch(setLoginState(true))
 
 			} catch (error) {
-				alert('Error connecting to MetaMask or fetching balance', error);
+
+				dispatch(setAlertState(true))
+				dispatch(setAlertMessage({ message: 'Error connecting to MetaMask', type: 'alert' }))
+				setTimeout(() => dispatch(setAlertState(false)), 1000)
 			}
 		} else {
-			alert('MetaMask is not installed');
+			 dispatch(setAlertState(true))
+			dispatch(setAlertMessage({ message: 'MetaMask is not installed', type: 'alert' }))
+			setTimeout(() => dispatch(setAlertState(false)), 1000)
 		}
 	};
 
-	useEffect(()=>{
+	useEffect(() => {
 		connectWallet()
-	},[])
+	}, [])
 
 	const activateNavbar = () => {
 		const navbar = document.querySelector('.navbar')
@@ -65,7 +70,7 @@ function Navbar() {
 					<img src={hlogo} className='w-full -full object-cover' alt="UIBT Logo" />
 				</Link>
 				<div className="md:hidden">
-				<button onClick={activateNavbar} id="navbar-toggler" className="text-xl py-[0.9rem] text-white"  >☰</button>
+					<button onClick={activateNavbar} id="navbar-toggler" className="text-xl py-[0.9rem] text-white"  >☰</button>
 				</div>
 				<ul className='navbar flex bg-[#000000] z-40 w-64 flex-col justify-center fixed top-0 right-0 h-screen translate-x-[100%] md:translate-x-0 md:bg-transparent md:w-auto md:flex-row md:justify-normal md:static md:h-auto items-center gap-4'>
 					<li><Link to="/">Home</Link></li>

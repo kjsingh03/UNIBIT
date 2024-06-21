@@ -26,10 +26,10 @@ const ownerAddress = process.env.OWNER_ADDRESS;
 
 const MAX_PLAYERS = 3;
 const MIN_PLAYERS_TO_START = 2;
-const START_GAME_DELAY = 20000;
+const START_GAME_DELAY = 2000;
 
 const rooms = {
-  'room1': { players: [], readyPlayers: [], playerChoices: {}, betAmount: 1, startGameTimer: null, result: Math.random() < 0.5 ? 'heads' : 'tails', roomId: 891871063280, roomCreated: false },
+  'room1': { players: [], readyPlayers: [], playerChoices: {}, betAmount: 1000, startGameTimer: null, result: Math.random() < 0.5 ? 'heads' : 'tails', roomId: 891871063280, roomCreated: false },
   'room2': { players: [], readyPlayers: [], playerChoices: {}, betAmount: 10000, startGameTimer: null, result: Math.random() < 0.5 ? 'heads' : 'tails', roomId: 278171202432, roomCreated: false },
   'room3': { players: [], readyPlayers: [], playerChoices: {}, betAmount: 100000, startGameTimer: null, result: Math.random() < 0.5 ? 'heads' : 'tails', roomId: 697236497826, roomCreated: false },
 };
@@ -156,6 +156,32 @@ const distributePool = async (roomId) => {
   }
 };
 
+const refund = async (roomId, walletAddress, betAmount) => {
+  try {
+    const createRoomData = poolContract.methods.refund(roomId, walletAddress, betAmount).encodeABI();
+
+    const gasEstimate = await web3.eth.estimateGas({ from: ownerAddress, to: contractAddress, data: createRoomData });
+
+    const gasPrice = await web3.eth.getGasPrice();
+
+    const tx = {
+      from: ownerAddress,
+      to: contractAddress,
+      gas: gasEstimate,
+      gasPrice: gasPrice,
+      data: createRoomData,
+    };
+
+    const signedTx = await web3.eth.accounts.signTransaction(tx, ownerPrivateKey);
+
+    const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+
+    return receipt;
+  } catch (error) {
+    console.error('Error while refunding', error.message);
+  }
+};
+
 io.on('connection', (socket) => {
 
   const cleanupListeners = () => {
@@ -258,6 +284,13 @@ io.on('connection', (socket) => {
       }
     });
 
+    socket.on('returnAmount', async ({ roomId, walletAddress, betAmount }) => {
+
+      refund(roomId, walletAddress, betAmount)
+
+      cleanupListeners();
+    });
+
     socket.on('disconnect', () => {
       const room = getRoom(roomName);
       room.players = room.players.filter(player => player.id !== socket.id);
@@ -283,8 +316,6 @@ io.on('connection', (socket) => {
       if (room.players.length === 0) {
         room.readyPlayers = [];
         room.playerChoices = {};
-        await decideWon(room.roomId, ownerAddress);
-        await distributePool(room.roomId);
       }
 
       io.to(roomName).emit('playerList', room.players);
@@ -300,7 +331,7 @@ io.on('connection', (socket) => {
   });
 });
 
-const PORT=process.env.PORT
+const PORT = process.env.PORT
 
 server.listen(PORT, () => {
   console.log('Server is running on port 3000');
