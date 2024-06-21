@@ -74,32 +74,10 @@ function Room() {
 			}
 		};
 
-		const handleVisibilityChange = () => {
-			if (document.visibilityState === 'hidden') {
-				handleBeforeUnload();
-			}
-		};
-
-		const handleRouteChange = () => {
-			handleBeforeUnload();
-		};
-
-		window.addEventListener('beforeunload', handleBeforeUnload);
-		document.addEventListener('visibilitychange', handleVisibilityChange);
-
-		// New event listener for player list update with betChoice
-		const handlePlayerList = (players) => {
-			players.forEach(player => {
-				console.log(`Player: ${player.playerName}, Bet Choice: ${player.betChoice}`);
-				// Update your UI accordingly
-			});
-		};
-
-		socket.on('playerList', handlePlayerList);
+		window?.addEventListener('beforeunload', handleBeforeUnload);
 
 		return () => {
-			window.removeEventListener('beforeunload', handleBeforeUnload);
-			document.removeEventListener('visibilitychange', handleVisibilityChange);
+			window?.removeEventListener('beforeunload', handleBeforeUnload);
 			if (socket) {
 				socket.emit('leaveRoom', { roomName, roomId, walletAddress, betAmount: betAmount * (10 ** 18), depositedAmount });
 				if (depositedAmount) {
@@ -111,7 +89,6 @@ function Room() {
 				}
 				socket.disconnect();
 			}
-			socket.off('playerList', handlePlayerList); // Cleanup event listener
 		};
 	}, [roomName]);
 
