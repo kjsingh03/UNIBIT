@@ -24,9 +24,9 @@ const poolContract = new web3.eth.Contract(PoolContractABI, contractAddress);
 const ownerPrivateKey = process.env.OWNER_PRIVATE_KEY;
 const ownerAddress = process.env.OWNER_ADDRESS;
 
-const MAX_PLAYERS = 3;
+const MAX_PLAYERS = 30;
 const MIN_PLAYERS_TO_START = 2;
-const START_GAME_DELAY = 2000;
+const START_GAME_DELAY = 20000;
 
 const rooms = {
   'room1': { players: [], readyPlayers: [], playerChoices: {}, betAmount: 1000, startGameTimer: null, result: Math.random() < 0.5 ? 'heads' : 'tails', roomId: 891871063280, roomCreated: false },
