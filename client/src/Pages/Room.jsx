@@ -86,7 +86,6 @@ function Room() {
 
 		window.addEventListener('beforeunload', handleBeforeUnload);
 		document.addEventListener('visibilitychange', handleVisibilityChange);
-		navigate.listen(handleRouteChange);
 
 		// New event listener for player list update with betChoice
 		const handlePlayerList = (players) => {
@@ -101,7 +100,6 @@ function Room() {
 		return () => {
 			window.removeEventListener('beforeunload', handleBeforeUnload);
 			document.removeEventListener('visibilitychange', handleVisibilityChange);
-			navigate.listen(null); // Stop listening to route changes
 			if (socket) {
 				socket.emit('leaveRoom', { roomName, roomId, walletAddress, betAmount: betAmount * (10 ** 18), depositedAmount });
 				if (depositedAmount) {
