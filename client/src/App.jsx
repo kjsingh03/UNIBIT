@@ -7,10 +7,8 @@ import { useSelector } from 'react-redux'
 
 function App() {
 
-  // useEffect(() => setTimeout(() => window.onresize = () => width > 768 ? location.reload() : '', 500), [])
-
-  const alertState = useSelector(state => state.alertState)
-  const alertMessage = useSelector(state => state.alertMessage)
+  const alertState = useSelector(state => state.alertState);
+  const alertMessage = useSelector(state => state.alertMessage);
 
   return (
     <>
