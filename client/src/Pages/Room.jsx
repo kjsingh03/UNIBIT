@@ -64,7 +64,7 @@ function Room() {
 		const socket = socketRef.current;
 
 		const handleBeforeUnload = () => {
-			socket.emit('leaveRoom', { roomName, roomId, walletAddress, betAmount, depositedAmount:betAmount * (10 ** 18) });
+			socket.emit('leaveRoom', { roomName, roomId, walletAddress, betAmount:betAmount * (10 ** 18), depositedAmount });
 			if (depositedAmount) {
 				dispatch(setUserBalance(userBalance + betAmount))
 				setDepositedAmount(false)
@@ -79,7 +79,7 @@ function Room() {
 		return () => {
 			window.removeEventListener('beforeunload', handleBeforeUnload);
 			if (socket) {
-				socket.emit('leaveRoom', { roomName, roomId, walletAddress, betAmount, depositedAmount:betAmount * (10 ** 18) });
+				socket.emit('leaveRoom', { roomName, roomId, walletAddress, betAmount:betAmount * (10 ** 18), depositedAmount });
 				if (depositedAmount) {
 					dispatch(setUserBalance(userBalance + betAmount))
 					setDepositedAmount(false)
@@ -303,7 +303,7 @@ function Room() {
 			setIsReady(!isReady);
 
 		} catch (error) {
-			socketRef.current.emit('leaveRoom', { roomName, roomId, walletAddress, betAmount, depositedAmount:betAmount * (10 ** 18)});
+			socketRef.current.emit('leaveRoom', { roomName, roomId, walletAddress, betAmount:betAmount * (10 ** 18), depositedAmount});
 			dispatch(setAlertState(true))
 			dispatch(setAlertMessage({ message: 'Failed to deposit amount', type: 'alert' }))
 			setTimeout(() => dispatch(setAlertState(false)), 1000)
@@ -356,12 +356,12 @@ function Room() {
 
 	const handleLeaveRoom = () => {
 		if (!depositedAmount) {
-			socketRef.current.emit('leaveRoom', { roomName, roomId, walletAddress, betAmount, depositedAmount:betAmount * (10 ** 18)});
+			socketRef.current.emit('leaveRoom', { roomName, roomId, walletAddress, betAmount:betAmount * (10 ** 18), depositedAmount});
 			setStartTime(0);
 			setTimeout(() => navigate('/'), 1000)
 		}
 		else {
-			socketRef.current.emit('leaveRoom', { roomName, roomId, walletAddress, betAmount, depositedAmount:betAmount * (10 ** 18)});
+			socketRef.current.emit('leaveRoom', { roomName, roomId, walletAddress, betAmount:betAmount * (10 ** 18), depositedAmount});
 			dispatch(setUserBalance(userBalance + betAmount))
 			setDepositedAmount(false)
 			dispatch(setAlertState(true))
