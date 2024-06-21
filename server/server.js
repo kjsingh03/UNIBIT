@@ -284,13 +284,6 @@ io.on('connection', (socket) => {
       }
     });
 
-    socket.on('returnAmount', async ({ roomId, walletAddress, betAmount }) => {
-
-      refund(roomId, walletAddress, betAmount)
-
-      cleanupListeners();
-    });
-
     socket.on('disconnect', () => {
       const room = getRoom(roomName);
       room.players = room.players.filter(player => player.id !== socket.id);
@@ -307,11 +300,15 @@ io.on('connection', (socket) => {
       cleanupListeners();
     });
 
-    socket.on('leaveRoom', async ({ roomName }) => {
+    socket.on('leaveRoom', async ({ roomName ,roomId, walletAddress, betAmount ,depositedAmount }) => {
       const room = getRoom(roomName);
       room.players = room.players.filter(player => player.id !== socket.id);
       room.readyPlayers = room.readyPlayers.filter(id => id !== socket.id);
       delete room.playerChoices[socket.id];
+
+      if(depositedAmount){
+        refund(roomId, walletAddress, betAmount)
+      }
 
       if (room.players.length === 0) {
         room.readyPlayers = [];
