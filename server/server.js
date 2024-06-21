@@ -278,8 +278,6 @@ io.on('connection', (socket) => {
           if (room.playerChoices[playerId] === room.result) {
             const decideResponse = await decideWon(room.roomId, walletAddress,room.betAmount);
             const distributeResponse = await distributePool(room.roomId,walletAddress,room.betAmount);
-            console.log(decideResponse)
-            console.log(distributeResponse)
           }
         }
 
