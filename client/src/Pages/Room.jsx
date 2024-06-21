@@ -64,31 +64,56 @@ function Room() {
 		const socket = socketRef.current;
 
 		const handleBeforeUnload = () => {
-			socket.emit('leaveRoom', { roomName, roomId, walletAddress, betAmount:betAmount * (10 ** 18), depositedAmount });
+			socket.emit('leaveRoom', { roomName, roomId, walletAddress, betAmount: betAmount * (10 ** 18), depositedAmount });
 			if (depositedAmount) {
-				dispatch(setUserBalance(userBalance + betAmount))
-				setDepositedAmount(false)
-				dispatch(setAlertState(true))
-				dispatch(setAlertMessage({ message: 'Amount will be refunded to your account in a while', type: 'alert' }))
-				setTimeout(() => dispatch(setAlertState(false)), 1000)
+				dispatch(setUserBalance(userBalance + betAmount));
+				setDepositedAmount(false);
+				dispatch(setAlertState(true));
+				dispatch(setAlertMessage({ message: 'Amount will be refunded to your account in a while', type: 'alert' }));
+				setTimeout(() => dispatch(setAlertState(false)), 1000);
 			}
 		};
 
-		window?.addEventListener('beforeunload', handleBeforeUnload);
+		const handleVisibilityChange = () => {
+			if (document.visibilityState === 'hidden') {
+				handleBeforeUnload();
+			}
+		};
+
+		const handleRouteChange = () => {
+			handleBeforeUnload();
+		};
+
+		window.addEventListener('beforeunload', handleBeforeUnload);
+		document.addEventListener('visibilitychange', handleVisibilityChange);
+		navigate.listen(handleRouteChange);
+
+		// New event listener for player list update with betChoice
+		const handlePlayerList = (players) => {
+			players.forEach(player => {
+				console.log(`Player: ${player.playerName}, Bet Choice: ${player.betChoice}`);
+				// Update your UI accordingly
+			});
+		};
+
+		socket.on('playerList', handlePlayerList);
 
 		return () => {
 			window.removeEventListener('beforeunload', handleBeforeUnload);
+			document.removeEventListener('visibilitychange', handleVisibilityChange);
+			navigate.listen(null); // Stop listening to route changes
 			if (socket) {
-				socket.emit('leaveRoom', { roomName, roomId, walletAddress, betAmount:betAmount * (10 ** 18), depositedAmount });
+				socket.emit('leaveRoom', { roomName, roomId, walletAddress, betAmount: betAmount * (10 ** 18), depositedAmount });
 				if (depositedAmount) {
-					dispatch(setUserBalance(userBalance + betAmount))
-					setDepositedAmount(false)
-					dispatch(setAlertState(true))
-					dispatch(setAlertMessage({ message: 'Amount will be refunded to your account in a while', type: 'alert' }))
-					setTimeout(() => dispatch(setAlertState(false)), 1000)
+					dispatch(setUserBalance(userBalance + betAmount));
+					setDepositedAmount(false);
+					dispatch(setAlertState(true));
+					dispatch(setAlertMessage({ message: 'Amount will be refunded to your account in a while', type: 'alert' }));
+					setTimeout(() => dispatch(setAlertState(false)), 1000);
 				}
 				socket.disconnect();
 			}
+			socket.off('playerList', handlePlayerList); // Cleanup event listener
 		};
 	}, [roomName]);
 
