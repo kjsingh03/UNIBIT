@@ -417,7 +417,7 @@ function Room() {
 		<>
 			{
 				loader ?
-					<div className=" h-[90vh] bg-[#0000004b] w-screen z-50 fixed top-[6rem] left-0 flex justify-center items-center">
+					<div className="h-[90vh] bg-[#0000004b] w-screen z-50 fixed top-[6rem] left-0 flex justify-center items-center">
 						<div className="flex flex-col gap-3 items-center">
 							<div className="border-4 border-[#00ACE6] border-t-transparent animate-spin h-16 w-16 rounded-[50%]">
 								&nbsp;
