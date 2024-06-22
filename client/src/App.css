@@ -13,11 +13,11 @@ body {
   background-color: #151515;
   color: #9A9BA9;
   font-family: "Inter", sans-serif;
-  background-image: linear-gradient(rgba(0, 0, 0, 0.527),rgba(0, 0, 0, 0.5)),url(./assets/bg.webp);
+ background-image: linear-gradient(rgba(0, 0, 0, 0.527),rgba(0, 0, 0, 0.5)),url(./assets/bg.png);
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;
-  backdrop-filter: blur(8px);
+   /* backdrop-filter: blur(8px); */
 }
 
 nav li {

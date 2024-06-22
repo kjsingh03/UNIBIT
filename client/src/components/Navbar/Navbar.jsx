@@ -64,7 +64,7 @@ function Navbar() {
 	}
 
 	return (
-		<nav className='w-full fixed bg-[#00000066]'>
+		<nav className='w-full fixed bg-[#00000066] overflow-x-hidde z-50'>
 			<div className="w-[95%] md:w-[80%] mx-auto flex items-center justify-between h-24">
 				<Link to="/" className="w-32">
 					<img src={hlogo} className='w-full -full object-cover' alt="UIBT Logo" />
@@ -72,7 +72,7 @@ function Navbar() {
 				<div className="md:hidden">
 					<button onClick={activateNavbar} id="navbar-toggler" className="text-xl py-[0.9rem] text-white"  >☰</button>
 				</div>
-				<ul className='navbar flex bg-[#000000] z-40 w-64 flex-col justify-center fixed top-0 right-0 h-screen translate-x-[100%] md:translate-x-0 md:bg-transparent md:w-auto md:flex-row md:justify-normal md:static md:h-auto items-center gap-4'>
+				<ul className='navbar flex bg-[#000000] z-40 w-64 flex-col justify-center absolute top-0 right-0 h-screen translate-x-[100%] md:translate-x-0 md:bg-transparent md:w-auto md:flex-row md:justify-normal md:static md:h-auto items-center gap-4'>
 					<li><Link to="/">Home</Link></li>
 					<div>
 						{userBalance ? (

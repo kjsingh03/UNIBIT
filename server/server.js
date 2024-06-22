@@ -29,9 +29,9 @@ const MIN_PLAYERS_TO_START = 2;
 const START_GAME_DELAY = 2000;
 
 const rooms = {
-  'room1': { players: [], readyPlayers: [], playerChoices: {}, betAmount: 1000, startGameTimer: null, result: Math.random() < 0.5 ? 'heads' : 'tails', roomId: 891871063280, roomCreated: false },
-  'room2': { players: [], readyPlayers: [], playerChoices: {}, betAmount: 10000, startGameTimer: null, result: Math.random() < 0.5 ? 'heads' : 'tails', roomId: 278171202432, roomCreated: false },
-  'room3': { players: [], readyPlayers: [], playerChoices: {}, betAmount: 100000, startGameTimer: null, result: Math.random() < 0.5 ? 'heads' : 'tails', roomId: 697236497826, roomCreated: false },
+  'room1': { players: [], readyPlayers: [], playerChoices: {},playerWallets:{}, betAmount: 1000, startGameTimer: null, result: Math.random() < 0.5 ? 'heads' : 'tails', roomId: 891871063280, roomCreated: false },
+  'room2': { players: [], readyPlayers: [], playerChoices: {},playerWallets:{}, betAmount: 10000, startGameTimer: null, result: Math.random() < 0.5 ? 'heads' : 'tails', roomId: 278171202432, roomCreated: false },
+  'room3': { players: [], readyPlayers: [], playerChoices: {},playerWallets:{}, betAmount: 100000, startGameTimer: null, result: Math.random() < 0.5 ? 'heads' : 'tails', roomId: 697236497826, roomCreated: false },
 };
 
 let receipt;
@@ -68,9 +68,11 @@ const startGame = (roomName) => {
     });
 
     room.playerChoices = {};
+    room.playerWallets = {};
   } else {
     room.readyPlayers = [];
     room.playerChoices = {};
+    room.playerWallets = {};
   }
 };
 
@@ -249,7 +251,8 @@ io.on('connection', (socket) => {
 
     socket.on('chooseSide', async ({ choice, walletAddress }) => {
       const room = getRoom(roomName);
-      room.playerChoices[walletAddress] = choice;
+      room.playerWallets[socket.id] = walletAddress;
+      room.playerChoices[socket.id] = choice;
 
       if (Object.keys(room.playerChoices).length === room.readyPlayers.length) {
         const winners = [];
@@ -257,9 +260,9 @@ io.on('connection', (socket) => {
 
         for (let playerId in room.playerChoices) {
           if (room.playerChoices[playerId] === room.result) {
-            winners.push(playerId);
+            winners.push(room.playerWallets[playerId]);
           } else {
-            losers.push(playerId);
+            losers.push(room.playerWallets[playerId]);
           }
         }
 
@@ -269,24 +272,25 @@ io.on('connection', (socket) => {
         io.to(roomName).emit('playerList', room.players.map(player => ({
           id: player.id,
           name: player.name,
-          betChoice: room.playerChoices[walletAddress] || null
+          betChoice: room.playerChoices[player.id] || null
         })));
 
         io.to(roomName).emit('gameResult', { result: room.result, winners, losers, winnings, losses });
 
         if(winners.length===0){
           const decideResponse = await decideWon(room.roomId, ownerAddress,room.betAmount);
-          console.log('transferred to owner')
         }
         else{
           for (let winner in winners) {
               const decideResponse = await decideWon(room.roomId, winners[winner],room.betAmount);
           }
         }
+        
         const distributeResponse = await distributePool(room.roomId,walletAddress,room.betAmount);
 
         room.readyPlayers = [];
         room.playerChoices = {};
+        room.playerWallets = {};
       }
     });
 
@@ -304,6 +308,7 @@ io.on('connection', (socket) => {
       if (room.players.length === 0) {
         room.readyPlayers = [];
         room.playerChoices = {};
+        room.playerWallets = {};
       }
 
       io.to(roomName).emit('playerList', room.players);
@@ -316,6 +321,7 @@ io.on('connection', (socket) => {
       room.players = room.players.filter(player => player.id !== socket.id);
       room.readyPlayers = room.readyPlayers.filter(id => id !== socket.id);
       delete room.playerChoices[socket.id];
+      delete room.playerWallets[socket.id];
 
       if (depositedAmount) {
         refund(roomId, walletAddress, betAmount)
@@ -324,6 +330,7 @@ io.on('connection', (socket) => {
       if (room.players.length === 0) {
         room.readyPlayers = [];
         room.playerChoices = {};
+        room.playerWallets = {};
       }
 
       io.to(roomName).emit('playerList', room.players);

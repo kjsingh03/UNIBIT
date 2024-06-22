@@ -12,14 +12,16 @@ function App() {
 
   return (
     <>
-      <Navbar />
-      <div className="screen hidden z-[49] w-screen h-screen fixed top-0 left-0">
+      <div className="overflow-hidden">
+        <Navbar />
+        {
+          alertState &&
+          <Alert message={alertMessage?.message} type={alertMessage?.type} />
+        }
+        <div className="screen hidden z-30 w-screen h-screen fixed top-0 left-0">
+        </div>
+        <Outlet />
       </div>
-      {
-        alertState &&
-        <Alert message={alertMessage?.message} type={alertMessage?.type} />
-      }
-      <Outlet />
     </>
   )
 }

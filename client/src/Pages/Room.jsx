@@ -423,12 +423,12 @@ function Room() {
 								&nbsp;
 							</div>
 							<div className="">
-								<p>Joining Room </p>
+								<p>Joining Room</p>
 							</div>
 						</div>
 					</div>
 					:
-					(<div className='flex flex-col gap-8 pt-32 min-h-screen'>
+					(<div className='flex flex-col gap-8 pt-32 h-screen overflow-y-auto'>
 						<div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-8 w-[95%] md:w-[80%] mx-auto lg:h-[80vh] 2xl:h-[75vh] ">
 							<div className={`flex flex-col items-center gap-6 lg:py-12 ${(!users.length > 0 || !joinedRoom) ? 'w-full' : 'w-max'} ${joinedRoom ? 'border' : ''} transition-[height] ease-in duration-300 p-4 rounded-xl ${users.length > 1 && users.filter(user => user.id === socketRef?.current?.id)[0]?.state ? 'border-green-600' : 'border-red-600'} ${users?.length === 0 ? 'border-transparent' : ''}`}>
 								<div className="w-64">
@@ -455,7 +455,7 @@ function Room() {
 										<div className="flex flex-col gap-1 items-center">
 											<button className={`btn selected-btn`}>Tails</button>
 											{
-												users.filter(user => user.id === socketRef?.current?.id)[0]?.betChoice === 'tails' &&
+												users.filter(user => user.id === socketRef?.current?.id)[0]?.betChoice === 'tails' && 
 												<i className="fa-solid fa-check text-green-600"></i>
 											}
 										</div>
@@ -502,14 +502,14 @@ function Room() {
 															<div className="flex flex-col gap-1 items-center">
 																<button className={`btn selected-btn`}>Heads</button>
 																{
-																	user?.betChoice === 'heads' &&
+																	user?.betChoice ==='heads' &&
 																	<i className="fa-solid fa-check text-green-600"></i>
 																}
 															</div>
 															<div className="flex flex-col gap-1 items-center">
 																<button className={`btn selected-btn`}>Tails</button>
 																{
-																	user?.betChoice === 'tails' &&
+																	user?.betChoice ==='tails' &&
 																	<i className="fa-solid fa-check text-green-600"></i>
 																}
 															</div>
@@ -545,7 +545,7 @@ function Room() {
 						<div className={`bet-screen bg-[#00000067] ${showModal ? 'flex' : 'hidden'} justify-center items-center z-[49] w-screen h-screen fixed top-0 left-0`}>
 							<div className="bet-modal relative border backdrop-blur-sm border-slate-400/25 w-[95%] sm:w-[30rem] h-96 rounded-lg flex flex-col items-center gap-4 justify-center">
 								<div className="flex items-center gap-2">
-									<h1 className='text-3xl font-semibold'>Choose Heads or Tails</h1>
+									<h1 className='text-xl md:text-3xl font-semibold'>Choose Heads or Tails</h1>
 									<div className="border-2 border-[#00ACE6] text-lg font-medium py-1 px-2 rounded-[50%] w-10 h-10 text-center">{betTime}</div>
 								</div>
 								<div className={`coin ${isFlipping ? 'flipping' : ''}`}>
@@ -564,11 +564,11 @@ function Room() {
 									<div className="h-8">
 										{
 											gameResult?.result === choice && gameResult &&
-											<p className='text-2xl font-semibold'>{gameResult.winnings > 0 ? `Congrats! You won ${gameResult.winnings} $UIBT` : `Tie! You will get refunded`}</p>
+											<p className='text-xl md:text-2xl font-semibold'>{gameResult.winnings > 0? `Congrats! You won ${gameResult.winnings} $UIBT` : `Tie! You will get refunded`}</p>
 										}
 										{
 											gameResult?.result !== choice && gameResult &&
-											<p className='text-2xl font-semibold'>Oops! You got rugged {gameResult.losses} $UIBT</p>
+											<p className='text-xl md:text-2xl font-semibold'>Oops! You got rugged {gameResult.losses} $UIBT</p>
 										}
 									</div>
 								}
