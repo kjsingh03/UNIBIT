@@ -169,19 +169,27 @@ nav a.active {
   background-color: #1c2327;
 }
 
-.dropdown {
-  position: relative;
+.accordion{
+  transition: all ease 0.3s;
 }
 
-.dropdown-content {
-  display: none;
-  position: absolute;
-  right: 0%;
-  z-index: 500;
-  background-color: transparent;
-  padding: 1rem 0;
+.accordion>p {
+  height: 0;
+  transform: translateY(5rem);
 }
 
-.dropdown:hover .dropdown-content {
-  display: flex;
+.accordion.active>p {
+  height: 100%;
+  transition: all 0.2s ease;
+  transform: translateY(0);
+}
+
+.accordion img {
+  rotate: 0deg;
+  transition: all 0.3s ease;
+}
+
+.accordion.active img {
+  rotate: 90deg;
+  transition: all 0.3s ease;
 }

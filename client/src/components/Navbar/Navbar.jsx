@@ -74,6 +74,7 @@ function Navbar() {
 				</div>
 				<ul className='navbar flex bg-[#000000] z-40 w-64 flex-col justify-center absolute top-0 right-0 h-screen translate-x-[100%] md:translate-x-0 md:bg-transparent md:w-auto md:flex-row md:justify-normal md:static md:h-auto items-center gap-4'>
 					<li><Link to="/">Home</Link></li>
+					<li><Link to="/faq">FAQ</Link></li>
 					<div>
 						{userBalance ? (
 							<div>

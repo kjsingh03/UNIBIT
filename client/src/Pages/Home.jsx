@@ -6,7 +6,7 @@ import { coinLogo, hlogo, logo } from '../assets'
 function Home() {
 
   return (
-    <div className='flex flex-col gap-8 pt-32 pb-16 min-h-screen'>
+    <div className='flex flex-col gap-8 pt-32 pb-16 h-screen overflow-y-auto'>
       <div className="flex flex-col gap-8 w-[95%] md:w-[80%] mx-auto">
 
         <div className="flex flex-col gap-4">

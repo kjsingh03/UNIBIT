@@ -521,7 +521,7 @@ function Room() {
 										{
 											users?.filter(user => user.id !== socketRef.current.id).length === 0 &&
 											<div className="col-span-3 w-full text-center text-xl h-full flex flex-col justify-center items-center">
-												<p className="">No Users</p>
+												<p className="text-2xl font-medium">No Users</p>
 											</div>
 										}
 									</div>
