@@ -45,44 +45,47 @@ function Game() {
 
     const betAmount = games[gameId]
 
-    useEffect(() => {
+    const checkForEvents = async () => {
         if (!window.ethereum) {
-            dispatch(setAlertMessage({ message: 'Please install MetaMask!', type: 'alert' }));
-            setTimeout(() => dispatch(setAlertMessage({})), 1000);
+            console.error('Ethereum provider not found');
             return;
         }
-
+    
         const web3 = new Web3(window.ethereum);
         const gameContract = new web3.eth.Contract(gameContractAbi, gameContractAddress);
-
-        const betResolvedHandler = (error, event) => {
-            if (error) {
-                console.error('Error in event listener:', error);
-                return;
-            }
-
-            const { user, amount, choice, result } = event.returnValues;
-            setGameResult(result);
-
-            if (result === 'won') {
-                console.log(`You won ${amount} $MEP!`);
-                dispatch(setUserBalance(userBalance + amount));
-            } else {
-                console.log(`You lost ${amount} $MEP!`);
-            }
-            console.log(user, amount, choice, result);
-        };
-
-        const subscribeToBetResolved = () => {
-            gameContract.events.BetResolved({ fromBlock: 'latest' }, betResolvedHandler);
-        };
-
-        subscribeToBetResolved();
-
-        return () => {
-            gameContract.events.BetResolved().off(betResolvedHandler);
-        };
-    }, [eventListen, dispatch, userBalance]);
+    
+        if (!gameContract) {
+            console.error('Game contract is not initialized');
+            return;
+        }
+    
+        try {
+            const latestBlock = await web3.eth.getBlockNumber();
+    
+            const events = await gameContract.getPastEvents('deposit', {
+                filter: { user: walletAddress },
+                fromBlock: (BigInt(latestBlock) - BigInt(100)).toString(),
+                toBlock: 'latest',
+            });
+    
+            events.forEach(event => {
+                console.log(event);
+                const eventId = `${event.transactionHash}-${event.logIndex}`;
+                console.log('New resolvePool event received:');
+                console.log('User:', event.returnValues.user);
+                console.log('Amount:', web3.utils.fromWei(event.returnValues.amount.toString(), 'ether'));
+                console.log('Result:', event.returnValues.result);
+            });
+        } catch (error) {
+            console.error('Error checking for events:', error);
+        }
+    };
+    
+    useEffect(() => {
+        checkForEvents();
+    }, []);
+    
+    
 
     useEffect(() => {
         setBetTime(10)
@@ -193,7 +196,7 @@ function Game() {
                 return refundRes;
             }
             else {
-                seteventListen(true)
+                await checkForEvents();
                 return res.data.response;
             }
 
