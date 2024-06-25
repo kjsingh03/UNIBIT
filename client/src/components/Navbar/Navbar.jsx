@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import Web3 from 'web3';
 import { hlogo } from '../../assets';
 import { Link } from 'react-router-dom';
-import { setUserBalance, setLoginState, setAlertMessage, setAlertState } from '../../store/slice';
+import { setUserBalance, setLoginState, setAlertMessage, setWalletAddress } from '../../store/slice';
 import uibtABI from '../../utils/unibit.json'
 
 const unibitTokenABI = uibtABI;
@@ -23,6 +23,8 @@ function Navbar() {
 			try {
 				const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
 
+				dispatch(setWalletAddress(accounts[0]))
+
 				const unibitTokenContract = new web3.eth.Contract(unibitTokenABI, unibitTokenAddress);
 
 				const balance = await unibitTokenContract.methods.balanceOf(accounts[0]).call();
@@ -32,20 +34,19 @@ function Navbar() {
 
 			} catch (error) {
 
-				dispatch(setAlertState(true))
 				dispatch(setAlertMessage({ message: 'Error connecting to MetaMask', type: 'alert' }))
-				setTimeout(() => dispatch(setAlertState(false)), 1000)
+				setTimeout(() => dispatch(setAlertMessage({})), 1000)
 			}
 		} else {
-			 dispatch(setAlertState(true))
+			 
 			dispatch(setAlertMessage({ message: 'MetaMask is not installed', type: 'alert' }))
-			setTimeout(() => dispatch(setAlertState(false)), 1000)
+			setTimeout(() => dispatch(setAlertMessage({})), 1000)
 		}
 	};
 
 	useEffect(() => {
 		connectWallet()
-	}, [])
+	}, [])	
 
 	const activateNavbar = () => {
 		const navbar = document.querySelector('.navbar')

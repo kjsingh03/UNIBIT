@@ -3,7 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
     loginState: false,
     userBalance: 0,
-    alertState: false,
+    walletAddress: '',
     alertMessage: {
         message: '',
         type: ''
@@ -20,15 +20,15 @@ const slice = createSlice({
         setUserBalance: (state, action) => {
             state.userBalance = action.payload
         },
-        setAlertState: (state, action) => {
-            state.alertState = action.payload
-        },
         setAlertMessage: (state, action) => {
             state.alertMessage = action.payload
-        }
+        },
+        setWalletAddress: (state, action) => {
+            state.walletAddress = action.payload
+        },
     }
 })
 
-export const { setLoginState, setUserBalance, setAlertMessage, setAlertState } = slice.actions
+export const { setLoginState, setUserBalance, setAlertMessage,setWalletAddress } = slice.actions
 
 export default slice.reducer

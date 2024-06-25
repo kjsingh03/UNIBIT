@@ -14,12 +14,20 @@ function Home() {
           <h3 className='text-2xl md:text-4xl text-center font-bold'>Join the rooms below</h3>
         </div>
 
-        <h6 className='text-lg font-bold' >Available Rooms</h6>
+        <h6 className='text-lg font-bold' >Multi Player Rooms</h6>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-2 place-items-center">
-          <PlayerCard amount={1000} img={logo} id={'room1'} />
-          <PlayerCard amount={10000} img={coinLogo} id={'room2'} />
-          <PlayerCard amount={100000} img={hlogo} id={'room3'} />
+          <PlayerCard amount={1000} img={logo} roomId={'room1'} />
+          <PlayerCard amount={10000} img={coinLogo} roomId={'room2'} />
+          <PlayerCard amount={100000} img={hlogo} roomId={'room3'} />
+        </div>
+
+        <h6 className='text-lg font-bold' >Single Player Rooms</h6>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-2 place-items-center">
+          <PlayerCard amount={1000} img={logo} gameId={'game1'} />
+          <PlayerCard amount={10000} img={coinLogo} gameId={'game2'} />
+          <PlayerCard amount={100000} img={hlogo} gameId={'game3'} />
         </div>
 
       </div>

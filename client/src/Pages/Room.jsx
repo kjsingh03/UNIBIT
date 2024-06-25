@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import io from 'socket.io-client';
 import { useDispatch, useSelector } from 'react-redux';
 import { logo } from '../assets';
-import { setAlertMessage, setAlertState, setUserBalance } from '../store/slice';
+import { setAlertMessage, setUserBalance } from '../store/slice';
 import { Input } from '../components';
 import Web3 from 'web3';
 import uibtABI from '../utils/unibit.json'
@@ -69,9 +69,8 @@ function Room() {
 			if (depositedAmount) {
 				dispatch(setUserBalance(userBalance + betAmount));
 				setDepositedAmount(false);
-				dispatch(setAlertState(true));
 				dispatch(setAlertMessage({ message: 'Amount will be refunded to your account in a while', type: 'alert' }));
-				setTimeout(() => dispatch(setAlertState(false)), 1000);
+				setTimeout(() => dispatch(setAlertMessage({})), 1000);
 			}
 		};
 
@@ -84,9 +83,8 @@ function Room() {
 				if (depositedAmount) {
 					dispatch(setUserBalance(userBalance + betAmount));
 					setDepositedAmount(false);
-					dispatch(setAlertState(true));
 					dispatch(setAlertMessage({ message: 'Amount will be refunded to your account in a while', type: 'alert' }));
-					setTimeout(() => dispatch(setAlertState(false)), 1000);
+					setTimeout(() => dispatch(setAlertMessage({})), 1000);
 				}
 			}
 		};
@@ -254,9 +252,8 @@ function Room() {
 		let refundTimeInterval;
 		if (users.length === 1 && depositedAmount) {
 			refundTimeInterval = setTimeout(() => {
-				dispatch(setAlertState(true))
 				dispatch(setAlertMessage({ message: 'You may leave room & get refunded', type: 'alert' }))
-				setTimeout(() => dispatch(setAlertState(false)), 5000)
+				setTimeout(() => dispatch(setAlertMessage({})), 5000)
 			}, 20000)
 		}
 		return () => { 
@@ -267,9 +264,8 @@ function Room() {
 	const handleReady = () => {
 
 		if (users?.length === 1) {
-			dispatch(setAlertState(true))
 			dispatch(setAlertMessage({ message: 'Please wait until others join', type: 'alert' }))
-			setTimeout(() => dispatch(setAlertState(false)), 1000)
+			setTimeout(() => dispatch(setAlertMessage({})), 1000)
 		}
 
 		else if (!depositedAmount && users?.length >= 2) {
@@ -281,17 +277,15 @@ function Room() {
 		}
 
 		else {
-			dispatch(setAlertState(true))
 			dispatch(setAlertMessage({ message: 'Amount already deposited', type: 'alert' }))
-			setTimeout(() => dispatch(setAlertState(false)), 1000)
+			setTimeout(() => dispatch(setAlertMessage({})), 1000)
 		}
 	};
 
 	const handleDeductAmt = async () => {
 		if (!window.ethereum) {
-			dispatch(setAlertState(true))
 			dispatch(setAlertMessage({ message: 'Please install MetaMask!', type: 'alert' }))
-			setTimeout(() => dispatch(setAlertState(false)), 1000)
+			setTimeout(() => dispatch(setAlertMessage({})), 1000)
 			return;
 		}
 
@@ -324,9 +318,8 @@ function Room() {
 
 		} catch (error) {
 			socketRef.current.emit('leaveRoom', { roomName, roomId, walletAddress, betAmount: betAmount * (10 ** 18), depositedAmount });
-			dispatch(setAlertState(true))
 			dispatch(setAlertMessage({ message: 'Failed to deposit amount', type: 'alert' }))
-			setTimeout(() => dispatch(setAlertState(false)), 1000)
+			setTimeout(() => dispatch(setAlertMessage({})), 1000)
 			setTimeout(() => navigate('/'), 1000)
 		}
 	};
@@ -346,14 +339,12 @@ function Room() {
 				handleJoinRoom();
 			}
 			else {
-				dispatch(setAlertState(true))
 				dispatch(setAlertMessage({ message: 'Insufficient balance to join the room', type: 'alert' }))
-				setTimeout(() => dispatch(setAlertState(false)), 1000)
+				setTimeout(() => dispatch(setAlertMessage({})), 1000)
 			}
 		} else {
-			dispatch(setAlertState(true))
 			dispatch(setAlertMessage({ message: 'Kindly Connect Wallet First', type: 'alert' }))
-			setTimeout(() => dispatch(setAlertState(false)), 1000)
+			setTimeout(() => dispatch(setAlertMessage({})), 1000)
 		}
 	};
 
@@ -383,9 +374,8 @@ function Room() {
 			socketRef.current.emit('leaveRoom', { roomName, roomId, walletAddress, betAmount: betAmount * (10 ** 18), depositedAmount });
 			dispatch(setUserBalance(userBalance + betAmount))
 			setDepositedAmount(false)
-			dispatch(setAlertState(true))
 			dispatch(setAlertMessage({ message: 'Amount will be refunded to your account in a while', type: 'alert' }))
-			setTimeout(() => dispatch(setAlertState(false)), 2000)
+			setTimeout(() => dispatch(setAlertMessage({})), 2000)
 			setTimeout(() => navigate('/'), 2000)
 		}
 
@@ -402,10 +392,9 @@ function Room() {
 			users.forEach(user => user.betChoice = null)
 			handleReady()
 		}
-		else {
-			dispatch(setAlertState(true))
+		else {	
 			dispatch(setAlertMessage({ message: 'Insufficient balance to join the room', type: 'alert' }))
-			setTimeout(() => dispatch(setAlertState(false)), 1000)
+			setTimeout(() => dispatch(setAlertMessage({})), 1000)
 		}
 	};
 

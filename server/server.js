@@ -4,7 +4,8 @@ const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
 const { Web3 } = require('web3');
-const PoolContractABI = require('./PoolContractABI.json'); // Ensure ABI is in JSON format
+const PoolContractABI = require('./PoolContractABI.json');
+const gameContractABI = require('./GameContractABI.json');
 const tls = require('tls');
 tls.TLSSocket.prototype.setMaxListeners(20);
 
@@ -19,7 +20,9 @@ const io = socketIo(server, {
 
 const web3 = new Web3(new Web3.providers.HttpProvider(process.env.INFURA_URL)); // Initialize Web3 with Infura URL
 const contractAddress = process.env.CONTRACT_ADDRESS;
+const gameContractAddress = process.env.GAME_CONTRACT_ADDRESS;
 const poolContract = new web3.eth.Contract(PoolContractABI, contractAddress);
+const gameContract = new web3.eth.Contract(gameContractABI, gameContractAddress);
 
 const ownerPrivateKey = process.env.OWNER_PRIVATE_KEY;
 const ownerAddress = process.env.OWNER_ADDRESS;
@@ -29,14 +32,19 @@ const MIN_PLAYERS_TO_START = 2;
 const START_GAME_DELAY = 2000;
 
 const rooms = {
-  'room1': { players: [], readyPlayers: [], playerChoices: {},playerWallets:{}, betAmount: 1000, startGameTimer: null, result: Math.random() < 0.5 ? 'heads' : 'tails', roomId: 891871063280, roomCreated: false },
-  'room2': { players: [], readyPlayers: [], playerChoices: {},playerWallets:{}, betAmount: 10000, startGameTimer: null, result: Math.random() < 0.5 ? 'heads' : 'tails', roomId: 278171202432, roomCreated: false },
-  'room3': { players: [], readyPlayers: [], playerChoices: {},playerWallets:{}, betAmount: 100000, startGameTimer: null, result: Math.random() < 0.5 ? 'heads' : 'tails', roomId: 697236497826, roomCreated: false },
+  'room1': { players: [], readyPlayers: [], playerChoices: {}, playerWallets: {}, betAmount: 1000, startGameTimer: null, result: Math.random() < 0.5 ? 'heads' : 'tails', roomId: 891871063280, roomCreated: false },
+  'room2': { players: [], readyPlayers: [], playerChoices: {}, playerWallets: {}, betAmount: 10000, startGameTimer: null, result: Math.random() < 0.5 ? 'heads' : 'tails', roomId: 278171202432, roomCreated: false },
+  'room3': { players: [], readyPlayers: [], playerChoices: {}, playerWallets: {}, betAmount: 100000, startGameTimer: null, result: Math.random() < 0.5 ? 'heads' : 'tails', roomId: 697236497826, roomCreated: false },
 };
 
-let receipt;
+const games = {
+  'game1': { betAmount: 1000, },
+  'game2': { betAmount: 10000, },
+  'game3': { betAmount: 100000, },
+};
 
-app.use(cors());
+app.use(cors())
+  .use(express.json())
 
 const getRoom = (roomName) => rooms[roomName];
 
@@ -106,7 +114,7 @@ const createRoom = async (roomId) => {
   }
 };
 
-const decideWon = async (roomId, walletAddress,betAmount) => {
+const decideWon = async (roomId, walletAddress, betAmount) => {
   try {
     const createRoomData = poolContract.methods.decideWon(roomId, walletAddress).encodeABI();
 
@@ -128,13 +136,13 @@ const decideWon = async (roomId, walletAddress,betAmount) => {
 
     return receipt;
   } catch (error) {
-    refund(roomId,walletAddress,betAmount)
+    refund(roomId, walletAddress, betAmount)
     console.log('Error in deciding Winner')
     return 'Error in deciding Winner'
   }
 };
 
-const distributePool = async (roomId,walletAddress,betAmount) => {
+const distributePool = async (roomId, walletAddress, betAmount) => {
   try {
     const createRoomData = poolContract.methods.distributePool(roomId).encodeABI();
 
@@ -156,7 +164,7 @@ const distributePool = async (roomId,walletAddress,betAmount) => {
 
     return receipt;
   } catch (error) {
-    refund(roomId,walletAddress,betAmount)
+    refund(roomId, walletAddress, betAmount)
     console.log('Error in deciding Winner')
     return 'Error in distributing Pool'
   }
@@ -165,9 +173,7 @@ const distributePool = async (roomId,walletAddress,betAmount) => {
 const refund = async (roomId, walletAddress, betAmount) => {
   try {
     const createRoomData = poolContract.methods.refund(roomId, walletAddress, betAmount).encodeABI();
-
     const gasEstimate = await web3.eth.estimateGas({ from: ownerAddress, to: contractAddress, data: createRoomData });
-
     const gasPrice = await web3.eth.getGasPrice();
 
     const tx = {
@@ -179,14 +185,92 @@ const refund = async (roomId, walletAddress, betAmount) => {
     };
 
     const signedTx = await web3.eth.accounts.signTransaction(tx, ownerPrivateKey);
-
     const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
 
     return receipt;
+
   } catch (error) {
-    console.error('Error while refunding', error.message);
+    return 'Error in refunding pool';
   }
 };
+
+const resolvePool = async (walletAddress, amount, choice) => {
+  try {
+    const createRoomData = gameContract.methods.resolvePool(walletAddress, amount, choice).encodeABI();
+    const gasEstimate = await web3.eth.estimateGas({ from: ownerAddress, to: gameContractAddress, data: createRoomData });
+    const gasPrice = await web3.eth.getGasPrice();
+
+    const tx = {
+      from: ownerAddress,
+      to: gameContractAddress,
+      gas: gasEstimate,
+      gasPrice: gasPrice,
+      data: createRoomData,
+    };
+
+    const signedTx = await web3.eth.accounts.signTransaction(tx, ownerPrivateKey);
+    const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+
+    const formattedReceipt = JSON.parse(JSON.stringify(receipt, (key, value) =>
+      typeof value === 'bigint' ? value.toString() : value
+    ));
+
+    return 'Pool resolved';
+  } catch (error) {
+    return 'Error in resolving pool';
+  }
+};
+
+const refundGame = async (walletAddress, amount) => {
+  try {
+    const createRoomData = gameContract.methods.refund(walletAddress, amount).encodeABI();
+    const gasEstimate = await web3.eth.estimateGas({ from: ownerAddress, to: gameContractAddress, data: createRoomData });
+    const gasPrice = await web3.eth.getGasPrice();
+
+    const tx = {
+      from: ownerAddress,
+      to: gameContractAddress,
+      gas: gasEstimate,
+      gasPrice: gasPrice,
+      data: createRoomData,
+    };
+
+    const signedTx = await web3.eth.accounts.signTransaction(tx, ownerPrivateKey);
+    const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+
+    const formattedReceipt = JSON.parse(JSON.stringify(receipt, (key, value) =>
+      typeof value === 'bigint' ? value.toString() : value
+    ));
+
+    return `Refund successful`;
+  } catch (error) {
+    console.log(error)
+    return 'Error in refunding';
+  }
+};
+
+app.post('/distribute', async (req, res) => {
+  try {
+    const { walletAddress, amount, choice } = req.body;
+
+    const response = await resolvePool(walletAddress, amount, choice);
+    res.status(200).json({ success: true, response });
+
+  } catch (err) {
+    res.status(500).json({ success: false, response: 'Error in resolving pool', err: err.message });
+  }
+});
+
+app.post('/refund', async (req, res) => {
+  try {
+    const { walletAddress, refundAmount } = req.body;
+
+    const response = await refundGame(walletAddress, refundAmount);
+    res.status(200).json({ success: true, response });
+  } catch (err) {
+    res.status(500).json({ success: false, response: 'Error in refunding', err: err.message });
+  }
+});
 
 io.on('connection', (socket) => {
 
@@ -277,16 +361,16 @@ io.on('connection', (socket) => {
 
         io.to(roomName).emit('gameResult', { result: room.result, winners, losers, winnings, losses });
 
-        if(winners.length===0){
-          const decideResponse = await decideWon(room.roomId, ownerAddress,room.betAmount);
+        if (winners.length === 0) {
+          const decideResponse = await decideWon(room.roomId, ownerAddress, room.betAmount);
         }
-        else{
+        else {
           for (let winner in winners) {
-              const decideResponse = await decideWon(room.roomId, winners[winner],room.betAmount);
+            const decideResponse = await decideWon(room.roomId, winners[winner], room.betAmount);
           }
         }
-        
-        const distributeResponse = await distributePool(room.roomId,walletAddress,room.betAmount);
+
+        const distributeResponse = await distributePool(room.roomId, walletAddress, room.betAmount);
 
         room.readyPlayers = [];
         room.playerChoices = {};
@@ -350,4 +434,13 @@ const PORT = process.env.PORT
 
 server.listen(PORT, () => {
   console.log('Server is running on port 3000');
+});
+
+gameContract.events.BetResolved({
+  fromBlock: 'latest'
+}, (error, event) => {
+  if (!error) {
+    const { user, amount, choice, result } = event.returnValues;
+    console.log(user, amount, choice, result)
+  }
 });

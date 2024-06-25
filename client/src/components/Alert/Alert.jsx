@@ -1,7 +1,7 @@
 import React from 'react'
 import { useDispatch } from 'react-redux'
-import { setAlertState } from '../../store/slice'
 import { alert } from '../../assets'
+import { setAlertMessage } from '../../store/slice'
 
 function Alert({ message, type }) {
 
@@ -14,7 +14,7 @@ function Alert({ message, type }) {
                     <img src={alert} className='w-ful h-full object-cover' alt="" />
                 </div>
                 <p className='text-lg'>{message}&nbsp;</p>
-                <p className="absolute right-[4%] top-[2px] md:top-2 text-2xl text-red-600 cursor-pointer" onClick={() => dispatch(setAlertState(false))}>&times;</p>
+                <p className="absolute right-[4%] top-[2px] md:top-2 text-2xl text-red-600 cursor-pointer" onClick={() => dispatch(setAlertMessage({}))}>&times;</p>
             </div>
         </div>
     )

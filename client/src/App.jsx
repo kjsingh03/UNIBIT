@@ -7,7 +7,6 @@ import { useSelector } from 'react-redux'
 
 function App() {
 
-  const alertState = useSelector(state => state.alertState);
   const alertMessage = useSelector(state => state.alertMessage);
 
   return (
@@ -15,7 +14,7 @@ function App() {
       <div className="overflow-hidden">
         <Navbar />
         {
-          alertState &&
+          alertMessage?.message &&
           <Alert message={alertMessage?.message} type={alertMessage?.type} />
         }
         <div className="screen hidden z-30 w-screen h-screen fixed top-0 left-0">

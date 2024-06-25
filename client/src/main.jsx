@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client'
 import App from './App.jsx'
 import './index.css'
 import { Route, RouterProvider, createBrowserRouter, createRoutesFromElements } from 'react-router-dom'
-import { Home, HowToPlay, Room } from './Pages'
+import { Game, Home, HowToPlay, Room } from './Pages'
 import { Provider } from 'react-redux'
 import { store } from './store/store.js'
 
@@ -13,6 +13,7 @@ const router = createBrowserRouter(
       <Route path="/" element={<Home />} />
       <Route path="/faq" element={<HowToPlay />} />
       <Route path="/room/:roomName" element={<Room />} />
+      <Route path="/game/:gameId" element={<Game />} />
     </Route>
   )
 )
