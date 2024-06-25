@@ -28,7 +28,7 @@ function Game() {
     const [isDepositing, setIsDepositing] = useState(false)
     const [amountInWei, setAmountInWei] = useState()
     const [gameResult, setGameResult] = useState(null);
-    const [eventListen, seteventListen] = useState(false)
+    const [latestEvent, setlatestEvent] = useState([])
 
     const userBalance = useSelector(state => state.userBalance);
     const loginState = useSelector(state => state.loginState);
@@ -50,51 +50,55 @@ function Game() {
             console.error('Ethereum provider not found');
             return;
         }
-    
+
         const web3 = new Web3(window.ethereum);
         const gameContract = new web3.eth.Contract(gameContractAbi, gameContractAddress);
-    
-        if (!gameContract) {
-            console.error('Game contract is not initialized');
-            return;
-        }
-    
+
         try {
-            const latestBlock = await web3.eth.getBlockNumber();
-    
-            const events = await gameContract.getPastEvents('deposit', {
+
+            const newEvents = await gameContract.getPastEvents('BetResolved', {
                 filter: { user: walletAddress },
-                fromBlock: (BigInt(latestBlock) - BigInt(100)).toString(),
+                fromBlock: 0,
                 toBlock: 'latest',
             });
-    
-            events.forEach(event => {
-                console.log(event);
-                const eventId = `${event.transactionHash}-${event.logIndex}`;
-                console.log('New resolvePool event received:');
-                console.log('User:', event.returnValues.user);
-                console.log('Amount:', web3.utils.fromWei(event.returnValues.amount.toString(), 'ether'));
-                console.log('Result:', event.returnValues.result);
-            });
+
+            let event = newEvents[newEvents.length - 1]
+
+            let betAmount = parseInt(event.returnValues.amount.toString().split('n')[0]) / (10 ** 18)
+
+            if (event.returnValues.result === 'won') {
+                if (choice == "heads") {
+                    setGameResult({ result: 'heads', amount: betAmount })
+                } else {
+                    setGameResult({ result: 'tails', amount: betAmount })
+                }
+                dispatch(setUserBalance(userBalance + betAmount));
+            } else {
+                if (choice == "heads") {
+                    setGameResult({ result: 'tails', amount: betAmount })
+                } else {
+                    setGameResult({ result: 'heads', amount: betAmount })
+                }
+            }
+
+            setIsFlipping(false)
+
         } catch (error) {
-            console.error('Error checking for events:', error);
+            console.error('Error checking for events:', error)
+            setIsFlipping(false)
         }
     };
-    
-    useEffect(() => {
-        checkForEvents();
-    }, []);
-    
-    
 
     useEffect(() => {
         setBetTime(10)
+        document.querySelector('.bet-btns')?.childNodes.forEach(btn => btn.disabled = false)
         document.querySelector('.bet-screen').addEventListener('click', (e) => {
             if (!document.querySelector('.bet-modal').contains(e.target)) {
                 setShowModal(false)
-                document.querySelector('.bet-btns').childNodes.forEach(btn => btn.disabled = false)
                 document.querySelector('.bet-btn.active')?.classList.remove('active')
                 setChoice(null)
+                setGameResult({})
+                setIsFlipping(false)
             }
         })
     }, [showModal])
@@ -123,12 +127,19 @@ function Game() {
             e.target.classList.add('active')
             document.querySelector('.bet-btns').childNodes.forEach(btn => btn.disabled = true)
 
-            const res = await distribute(walletAddress, amountInWei, newChoice)
-
-            console.log(res)
+            if (newChoice) {
+                const res = await distribute(walletAddress, amountInWei, newChoice)
+                if (res !== 'Pool resolved')
+                    setShowModal(false)
+            }
+            else{
+                setGameResult({ result: '', amount: betAmount })
+            }
+            setIsFlipping(false)
         }
         catch (err) {
             console.log(err)
+            setIsFlipping(false)
         }
     };
 
@@ -169,7 +180,7 @@ function Game() {
             const depositTx = await gameContract.methods.deposit(amountInWei).send({ from: walletAddress });
 
             dispatch(setUserBalance(userBalance - betAmount))
-
+            setIsFlipping(true)
             setShowModal(true)
 
         } catch (error) {
@@ -270,12 +281,12 @@ function Game() {
                             gameResult &&
                             <div className="h-8">
                                 {
-                                    gameResult?.result === choice && gameResult &&
-                                    <p className='text-xl md:text-2xl font-semibold'>{gameResult.winnings > 0 ? `Congrats! You won ${gameResult.winnings} $UIBT` : `Tie! You will get refunded`}</p>
+                                    gameResult?.result === choice &&
+                                    <p className='text-xl md:text-2xl font-semibold'>{`Congrats! You won ${gameResult.amount} $UIBT`}</p>
                                 }
                                 {
-                                    gameResult?.result !== choice && gameResult &&
-                                    <p className='text-xl md:text-2xl font-semibold'>Oops! You got rugged {gameResult.losses} $UIBT</p>
+                                    gameResult?.result !== choice &&
+                                    <p className='text-xl md:text-2xl font-semibold'>Oops! You got rugged {gameResult.amount} $UIBT</p>
                                 }
                             </div>
                         }

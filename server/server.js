@@ -435,12 +435,3 @@ const PORT = process.env.PORT
 server.listen(PORT, () => {
   console.log('Server is running on port 3000');
 });
-
-gameContract.events.BetResolved({
-  fromBlock: 'latest'
-}, (error, event) => {
-  if (!error) {
-    const { user, amount, choice, result } = event.returnValues;
-    console.log(user, amount, choice, result)
-  }
-});
