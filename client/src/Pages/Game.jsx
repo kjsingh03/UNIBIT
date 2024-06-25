@@ -24,7 +24,6 @@ function Game() {
     const [choice, setChoice] = useState(null);
     const [showModal, setShowModal] = useState(false);
     const [isFlipping, setIsFlipping] = useState(false);
-    const [betTime, setBetTime] = useState(10)
     const [isDepositing, setIsDepositing] = useState(false)
     const [amountInWei, setAmountInWei] = useState()
     const [gameResult, setGameResult] = useState(null);
@@ -72,7 +71,7 @@ function Game() {
                 } else {
                     setGameResult({ result: 'tails', amount: betAmount })
                 }
-                dispatch(setUserBalance(userBalance + betAmount));
+                dispatch(setUserBalance(userBalance + betAmount*2));
             } else {
                 if (choice == "heads") {
                     setGameResult({ result: 'tails', amount: betAmount })
@@ -90,7 +89,6 @@ function Game() {
     };
 
     useEffect(() => {
-        setBetTime(10)
         document.querySelector('.bet-btns')?.childNodes.forEach(btn => btn.disabled = false)
         document.querySelector('.bet-screen').addEventListener('click', (e) => {
             if (!document.querySelector('.bet-modal').contains(e.target)) {
@@ -103,38 +101,18 @@ function Game() {
         })
     }, [showModal])
 
-    useEffect(() => {
-
-        let betInterval = setInterval(() => {
-            setBetTime(p => {
-                if (p > 0)
-                    return p - 1;
-                else {
-                    clearInterval(betInterval)
-                    return 0;
-                }
-            })
-        }, 1000)
-
-        return () => clearInterval(betInterval)
-
-    }, [betTime])
-
     const handleChoice = async (e) => {
         try {
+            setIsFlipping(true)
             let newChoice = e.target.innerText.toLowerCase()
             setChoice(newChoice)
             e.target.classList.add('active')
             document.querySelector('.bet-btns').childNodes.forEach(btn => btn.disabled = true)
 
-            if (newChoice) {
-                const res = await distribute(walletAddress, amountInWei, newChoice)
-                if (res !== 'Pool resolved')
-                    setShowModal(false)
-            }
-            else{
-                setGameResult({ result: '', amount: betAmount })
-            }
+            const res = await distribute(walletAddress, amountInWei, newChoice)
+            if (res !== 'Pool resolved')
+                setShowModal(false)
+
             setIsFlipping(false)
         }
         catch (err) {
@@ -180,7 +158,7 @@ function Game() {
             const depositTx = await gameContract.methods.deposit(amountInWei).send({ from: walletAddress });
 
             dispatch(setUserBalance(userBalance - betAmount))
-            setIsFlipping(true)
+
             setShowModal(true)
 
         } catch (error) {
@@ -264,7 +242,6 @@ function Game() {
                     <div className="bet-modal relative border backdrop-blur-sm border-slate-400/25 w-[95%] sm:w-[30rem] h-96 rounded-lg flex flex-col items-center gap-4 justify-center">
                         <div className="flex items-center gap-2">
                             <h1 className='text-xl md:text-3xl font-semibold'>Choose Heads or Tails</h1>
-                            <div className="border-2 border-[#00ACE6] text-lg font-medium py-1 px-2 rounded-[50%] w-10 h-10 text-center">{betTime}</div>
                         </div>
                         <div className={`coin ${isFlipping ? 'flipping' : ''}`}>
                             <div className={`side heads-img ${gameResult?.result === 'heads' ? 'show' : ''}`}></div>

@@ -14,7 +14,7 @@ function Home() {
   useEffect(()=>{
     document.querySelector('.room-screen').addEventListener('click',(e)=>{
       if(!document.querySelector('.room-modal').contains(e.target)){
-        setShowModal({})
+        setShowModal({});
       }
     })
   },[showModal])
