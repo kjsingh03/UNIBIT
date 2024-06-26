@@ -107,8 +107,16 @@ function Game() {
             document.querySelector('.bet-btns').childNodes.forEach(btn => btn.disabled = true)
 
             const res = await distribute(walletAddress, amountInWei, newChoice)
-            if (res !== 'Pool resolved')
-                setShowModal(false)
+            if (res !== 'Pool resolved') {
+                document.querySelector('.bet-btns')?.childNodes.forEach(btn => btn.disabled = false)
+                document.querySelector('.bet-screen').addEventListener('click', (e) => {
+                    setShowModal(false)
+                    document.querySelector('.bet-btn.active')?.classList.remove('active')
+                    setChoice(null)
+                    setGameResult(null)
+                    setIsFlipping(false)
+                })
+            }
 
             setIsFlipping(false)
         }
