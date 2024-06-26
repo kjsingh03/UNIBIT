@@ -108,13 +108,13 @@ function Game() {
 
             const res = await distribute(walletAddress, amountInWei, newChoice)
             if (res !== 'Pool resolved') {
+                setIsFlipping(false)
                 document.querySelector('.bet-btns')?.childNodes.forEach(btn => btn.disabled = false)
                 document.querySelector('.bet-screen').addEventListener('click', (e) => {
                     setShowModal(false)
-                    document.querySelector('.bet-btn.active')?.classList.remove('active')
                     setChoice(null)
+                    document.querySelector('.bet-btn.active')?.classList.remove('active')
                     setGameResult(null)
-                    setIsFlipping(false)
                 })
             }
 
