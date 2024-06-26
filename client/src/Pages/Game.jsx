@@ -71,7 +71,7 @@ function Game() {
                 } else {
                     setGameResult({ result: 'tails', amount: betAmount })
                 }
-                dispatch(setUserBalance(userBalance + betAmount*2));
+                dispatch(setUserBalance(userBalance + betAmount * 2));
             } else {
                 if (choice == "heads") {
                     setGameResult({ result: 'tails', amount: betAmount })
@@ -80,6 +80,16 @@ function Game() {
                 }
             }
 
+            document.querySelector('.bet-btns')?.childNodes.forEach(btn => btn.disabled = false)
+            document.querySelector('.bet-screen').addEventListener('click', (e) => {
+                if (!document.querySelector('.bet-modal').contains(e.target)) {
+                    setShowModal(false)
+                    document.querySelector('.bet-btn.active')?.classList.remove('active')
+                    setChoice(null)
+                    setGameResult(null)
+                    setIsFlipping(false)
+                }
+            })
             setIsFlipping(false)
 
         } catch (error) {
@@ -87,19 +97,6 @@ function Game() {
             setIsFlipping(false)
         }
     };
-
-    useEffect(() => {
-        document.querySelector('.bet-btns')?.childNodes.forEach(btn => btn.disabled = false)
-        document.querySelector('.bet-screen').addEventListener('click', (e) => {
-            if (!document.querySelector('.bet-modal').contains(e.target)) {
-                setShowModal(false)
-                document.querySelector('.bet-btn.active')?.classList.remove('active')
-                setChoice(null)
-                setGameResult({})
-                setIsFlipping(false)
-            }
-        })
-    }, [showModal])
 
     const handleChoice = async (e) => {
         try {
