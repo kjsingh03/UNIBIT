@@ -9,6 +9,7 @@ import Web3 from 'web3';
 import uibtABI from '../utils/unibit.json'
 import gameABI from '../utils/game.json'
 import '../App.css'
+import unibitVideo from '../assets/unibit.mp4';
 
 const unibitTokenAddress = import.meta.env.VITE_UNIBIT_TOKEN_ADDRESS;
 
@@ -248,7 +249,9 @@ function Game() {
                         <div className="flex items-center gap-2">
                             <h1 className='text-xl md:text-3xl font-semibold'>Choose Heads or Tails</h1>
                         </div>
-                        <div className={`coin ${isFlipping ? 'flipping' : ''}`}>
+                        <div>  
+                            <video width="300" autoPlay loop>
+                        <source src={unibitVideo} type="video/mp4" /> </video>
                             <div className={`side heads-img ${gameResult?.result === 'heads' ? 'show' : ''}`}></div>
                             <div className={`side tails-img ${gameResult?.result === 'tails' ? 'show' : ''}`}></div>
                         </div>

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react'
 import { useDispatch, useSelector } from 'react-redux'
 import { PlayerCard } from '../components'
-import { coinLogo, hlogo, logo } from '../assets'
+import { coinLogo } from '../assets'
 import { Navigate, useNavigate } from 'react-router-dom'
+
 
 function Home() {
 
@@ -31,9 +32,9 @@ function Home() {
         <h6 className='text-lg font-bold' >Available Rooms</h6>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 md:gap-2 place-items-center">
-          <PlayerCard amount={1000} img={logo} setShowModal={setShowModal} gameId={'game1'} roomId={'room1'} />
+          <PlayerCard amount={1000} img={coinLogo} setShowModal={setShowModal} gameId={'game1'} roomId={'room1'} />
           <PlayerCard amount={10000} img={coinLogo} setShowModal={setShowModal} gameId={'game2'} roomId={'room2'} />
-          <PlayerCard amount={100000} img={hlogo} setShowModal={setShowModal} gameId={'game3'} roomId={'room3'} />
+          <PlayerCard amount={100000} img={coinLogo} setShowModal={setShowModal} gameId={'game3'} roomId={'room3'} />
         </div>
 
         <div className={`room-screen bg-[#00000067] ${showModal.gameId ? 'flex' : 'hidden'} justify-center items-center z-[49] w-screen h-screen fixed top-0 left-0`}>
