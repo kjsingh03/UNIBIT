@@ -50,7 +50,7 @@ function Room() {
 	const navigate = useNavigate()
 
 	const betAmounts = {
-		'room1': 1000,
+		'room1': 1,
 		'room2': 10000,
 		'room3': 100000,
 	};

@@ -37,12 +37,6 @@ const rooms = {
   'room3': { players: [], readyPlayers: [], playerChoices: {}, playerWallets: {}, betAmount: 100000, startGameTimer: null, result: Math.random() < 0.5 ? 'heads' : 'tails', roomId: 697236497826, roomCreated: false },
 };
 
-const games = {
-  'game1': { betAmount: 1000, },
-  'game2': { betAmount: 10000, },
-  'game3': { betAmount: 100000, },
-};
-
 app.use(cors())
   .use(express.json())
 
