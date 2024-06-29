@@ -23,12 +23,11 @@ function Navbar() {
 			try {
 				const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
 
-				dispatch(setWalletAddress(accounts[0]))
-
 				const unibitTokenContract = new web3.eth.Contract(unibitTokenABI, unibitTokenAddress);
-
+				
 				const balance = await unibitTokenContract.methods.balanceOf(accounts[0]).call();
-
+				
+				dispatch(setWalletAddress(accounts[0]))
 				dispatch(setUserBalance((parseInt(balance) / 10 ** 18).toFixed(2)));
 				dispatch(setLoginState(true))
 

@@ -165,6 +165,7 @@ function Room() {
 
 		const handleRoomIdGenerated = ({ result, roomId }) => {
 			console.log(result, roomId)
+			sessionStorage.setItem('result',result)
 			setRoomId(roomId)
 			setLoader(false)
 		}

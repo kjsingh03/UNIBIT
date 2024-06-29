@@ -24,11 +24,11 @@ function Game() {
     const { gameId } = useParams()
     const [choice, setChoice] = useState(null);
     const [showModal, setShowModal] = useState(false);
-    const [isFlipping, setIsFlipping] = useState(false);
     const [isDepositing, setIsDepositing] = useState(false)
     const [amountInWei, setAmountInWei] = useState()
-    const [gameResult, setGameResult] = useState(null);
-    const [latestEvent, setlatestEvent] = useState([])
+    const [gameResult, setGameResult] = useState('');
+    const [betTime, setBetTime] = useState(0)
+    const [settingResult, setSettingResult] = useState(false)
 
     const userBalance = useSelector(state => state.userBalance);
     const loginState = useSelector(state => state.loginState);
@@ -44,88 +44,6 @@ function Game() {
     }
 
     const betAmount = games[gameId]
-
-    const checkForEvents = async () => {
-        if (!window.ethereum) {
-            console.error('Ethereum provider not found');
-            return;
-        }
-
-        const web3 = new Web3(window.ethereum);
-        const gameContract = new web3.eth.Contract(gameContractAbi, gameContractAddress);
-
-        try {
-
-            const newEvents = await gameContract.getPastEvents('BetResolved', {
-                filter: { user: walletAddress },
-                fromBlock: 0,
-                toBlock: 'latest',
-            });
-
-            let event = newEvents[newEvents.length - 1]
-
-            let betAmount = parseInt(event.returnValues.amount.toString().split('n')[0]) / (10 ** 18)
-
-            if (event.returnValues.result === 'won') {
-                if (choice == "heads") {
-                    setGameResult({ result: 'heads', amount: betAmount })
-                } else {
-                    setGameResult({ result: 'tails', amount: betAmount })
-                }
-                dispatch(setUserBalance(userBalance + betAmount * 2));
-            } else {
-                if (choice == "heads") {
-                    setGameResult({ result: 'tails', amount: betAmount })
-                } else {
-                    setGameResult({ result: 'heads', amount: betAmount })
-                }
-            }
-
-            document.querySelector('.bet-btns')?.childNodes.forEach(btn => btn.disabled = false)
-            document.querySelector('.bet-screen').addEventListener('click', (e) => {
-                if (!document.querySelector('.bet-modal').contains(e.target)) {
-                    setShowModal(false)
-                    document.querySelector('.bet-btn.active')?.classList.remove('active')
-                    setChoice(null)
-                    setGameResult(null)
-                    setIsFlipping(false)
-                }
-            })
-            setIsFlipping(false)
-
-        } catch (error) {
-            console.error('Error checking for events:', error)
-            setIsFlipping(false)
-        }
-    };
-
-    const handleChoice = async (e) => {
-        try {
-            setIsFlipping(true)
-            let newChoice = e.target.innerText.toLowerCase()
-            setChoice(newChoice)
-            e.target.classList.add('active')
-            document.querySelector('.bet-btns').childNodes.forEach(btn => btn.disabled = true)
-
-            const res = await distribute(walletAddress, amountInWei, newChoice)
-            if (res !== 'Pool resolved') {
-                setIsFlipping(false)
-                document.querySelector('.bet-btns')?.childNodes.forEach(btn => btn.disabled = false)
-                document.querySelector('.bet-screen').addEventListener('click', (e) => {
-                    setShowModal(false)
-                    setChoice(null)
-                    document.querySelector('.bet-btn.active')?.classList.remove('active')
-                    setGameResult(null)
-                })
-            }
-
-            setIsFlipping(false)
-        }
-        catch (err) {
-            console.log(err)
-            setIsFlipping(false)
-        }
-    };
 
     const handlePlay = () => {
         if (loginState) {
@@ -150,6 +68,9 @@ function Game() {
         }
 
         setIsDepositing(true)
+        setChoice(null);
+        setGameResult(null);
+        setShowModal(false);
         try {
             const web3 = new Web3(window.ethereum);
 
@@ -163,8 +84,12 @@ function Game() {
 
             const depositTx = await gameContract.methods.deposit(amountInWei).send({ from: walletAddress });
 
-            dispatch(setUserBalance(userBalance - betAmount))
+            const result = await axios.get(`${import.meta.env.VITE_SERVER_URL}/result`)
 
+            sessionStorage.setItem('result', result.data)
+
+            dispatch(setUserBalance(userBalance - betAmount))
+            setBetTime(10)
             setShowModal(true)
 
         } catch (error) {
@@ -176,56 +101,71 @@ function Game() {
         }
     }
 
-    const distribute = async (walletAddress, amount, choice) => {
+    const handleChoice = async (e) => {
         try {
-            const res = await axios.post(`${import.meta.env.VITE_SERVER_URL}/distribute`, {
-                walletAddress,
-                amount,
-                choice
-            });
+            let newChoice = e.target.innerText.toLowerCase()
+            setChoice(newChoice)
+            e.target.classList.add('active')
+            document.querySelector('.bet-btns').childNodes.forEach(btn => btn.disabled = true)
 
-            if (res.data.response === 'Error in resolving pool') {
-                const refundRes = await refund(walletAddress, amountInWei);
-                dispatch(setAlertMessage({ message: res.data.response + ', initiating refund', type: 'alert' }))
-                setTimeout(() => dispatch(setAlertMessage({})), 2000);
-                return refundRes;
-            }
-            else {
-                await checkForEvents();
-                return res.data.response;
-            }
+            let newResult = sessionStorage.getItem('result')
+            setTimeout(() => handleGameResult(newResult), betTime * 1000)
 
-        } catch (err) {
-            const refundRes = await refund(walletAddress, amountInWei);
-            dispatch(setAlertMessage({ message: res.data.response + ', initiating refund', type: 'alert' }))
-            setTimeout(() => dispatch(setAlertMessage({})), 2000);
-            return 'Error in resolving pool, refunding pool';
+            if (newResult === newChoice) {
+                const distributeRes = await axios.post(`${import.meta.env.VITE_SERVER_URL}/distribute`, {
+                    walletAddress,
+                    amount: amountInWei
+                })
+
+                setTimeout(() => {
+                    dispatch(setAlertMessage({ message: 'Amount Transferred to your account', type: 'success' }));
+                    setTimeout(() => dispatch(setAlertMessage({})), 2000);
+
+                    dispatch(setUserBalance(userBalance+betAmount*2));
+                }, betTime * 1000)
+            }
+        }
+        catch (err) {
+            console.log(err)
         }
     };
 
-    const refund = async (walletAddress, refundAmount) => {
-        try {
-            const res = await axios.post(`${import.meta.env.VITE_SERVER_URL}/refund`, {
-                walletAddress,
-                refundAmount
-            });
-
-            if (res.data.response === 'Refund successful') {
-                dispatch(setUserBalance(userBalance + refundAmount / 10 ** 18))
-                dispatch(setAlertMessage({ message: res.data.response, type: 'alert' }))
-                setTimeout(() => dispatch(setAlertMessage({})), 2000);
-            } else {
-                dispatch(setAlertMessage({ message: res.data.response, type: 'alert' }))
-                setTimeout(() => dispatch(setAlertMessage({})), 2000);
+    const handleGameResult = (choice) => {
+        setGameResult(choice)
+        document.querySelector('.bet-screen')?.addEventListener('click', (e) => {
+            if (!document.querySelector('.bet-modal').contains(e.target)) {
+                document.querySelector('.bet-btns')?.childNodes.forEach(btn => btn.disabled = false)
+                document.querySelector('.bet-btn.active')?.classList.remove('active')
+                setChoice(null)
+                setGameResult(null)
+                setShowModal(false)
             }
-            return res.data.response;
-        }
-        catch (err) {
-            dispatch(setAlertMessage({ message: 'Error in refunding', type: 'alert' }))
-            setTimeout(() => dispatch(setAlertMessage({})), 1200);
-            return 'Error in refunding';
-        }
+        })
     }
+
+    useEffect(() => {
+        let betTimeIntervalId;
+
+        if (betTime > 0) {
+            betTimeIntervalId = setInterval(() => {
+                setBetTime(prevTime => {
+                    if (prevTime > 1) {
+                        return prevTime - 1;
+                    } else {
+                        clearInterval(betTimeIntervalId);
+                        if (choice === null) {
+                            handleGameResult('lost')
+                        }
+                        return 0;
+                    }
+                });
+            }, 1000);
+        }
+
+        return () => {
+            clearInterval(betTimeIntervalId);
+        };
+    }, [betTime]);
 
     return (
         <div>
@@ -248,12 +188,13 @@ function Game() {
                     <div className="bet-modal relative border backdrop-blur-sm border-slate-400/25 w-[95%] sm:w-[30rem] h-96 rounded-lg flex flex-col items-center gap-4 justify-center">
                         <div className="flex items-center gap-2">
                             <h1 className='text-xl md:text-3xl font-semibold'>Choose Heads or Tails</h1>
+                            <div className={`${betTime ? 'block' : 'hidden'} border-2 border-[#00ACE6] text-lg font-medium py-1 px-2 rounded-[50%] w-10 h-10 text-center`}>{betTime}</div>
                         </div>
-                        <div>  
+                        <div>
                             <video width="300" autoPlay loop>
-                        <source src={unibitVideo} type="video/mp4" /> </video>
-                            <div className={`side heads-img ${gameResult?.result === 'heads' ? 'show' : ''}`}></div>
-                            <div className={`side tails-img ${gameResult?.result === 'tails' ? 'show' : ''}`}></div>
+                                <source src={unibitVideo} type="video/mp4" /> </video>
+                            <div className={`side heads-img ${gameResult === 'heads' ? 'show' : ''}`}></div>
+                            <div className={`side tails-img ${gameResult === 'tails' ? 'show' : ''}`}></div>
                         </div>
                         {
                             !gameResult &&
@@ -263,15 +204,15 @@ function Game() {
                             </div>
                         }
                         {
-                            gameResult &&
+                            gameResult && !settingResult &&
                             <div className="h-8">
                                 {
-                                    gameResult?.result === choice &&
-                                    <p className='text-xl md:text-2xl font-semibold'>{`Congrats! You won ${gameResult.amount} $UIBT`}</p>
+                                    gameResult === choice &&
+                                    <p className='text-xl md:text-2xl font-semibold'>{`Congrats! You won ${betAmount} $UIBT`}</p>
                                 }
                                 {
-                                    gameResult?.result !== choice &&
-                                    <p className='text-xl md:text-2xl font-semibold'>Oops! You got rugged {gameResult.amount} $UIBT</p>
+                                    gameResult !== choice &&
+                                    <p className='text-xl md:text-2xl font-semibold'>Oops! You got rugged {betAmount} $UIBT</p>
                                 }
                             </div>
                         }

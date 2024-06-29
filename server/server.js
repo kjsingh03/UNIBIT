@@ -194,9 +194,9 @@ const refund = async (roomId, walletAddress, betAmount) => {
   }
 };
 
-const resolvePool = async (walletAddress, amount, choice) => {
+const transferPool = async (walletAddress, amount) => {
   try {
-    const createRoomData = gameContract.methods.resolvePool(walletAddress, amount, choice).encodeABI();
+    const createRoomData = gameContract.methods.transferPool(walletAddress, amount).encodeABI();
     const gasEstimate = await web3.eth.estimateGas({ from: ownerAddress, to: gameContractAddress, data: createRoomData });
     const gasPrice = await web3.eth.getGasPrice();
 
@@ -221,51 +221,20 @@ const resolvePool = async (walletAddress, amount, choice) => {
   }
 };
 
-const refundGame = async (walletAddress, amount) => {
+app.get('/result', async (req, res) => {
   try {
-    const createRoomData = gameContract.methods.refund(walletAddress, amount).encodeABI();
-    const gasEstimate = await web3.eth.estimateGas({ from: ownerAddress, to: gameContractAddress, data: createRoomData });
-    const gasPrice = await web3.eth.getGasPrice();
-
-    const tx = {
-      from: ownerAddress,
-      to: gameContractAddress,
-      gas: gasEstimate,
-      gasPrice: gasPrice,
-      data: createRoomData,
-    };
-
-    const signedTx = await web3.eth.accounts.signTransaction(tx, ownerPrivateKey);
-    const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
-
-    const formattedReceipt = JSON.parse(JSON.stringify(receipt, (key, value) =>
-      typeof value === 'bigint' ? value.toString() : value
-    ));
-
-    return `Refund successful`;
-  } catch (error) {
-    console.log(error)
-    return 'Error in refunding';
-  }
-};
-
-app.post('/distribute', async (req, res) => {
-  try {
-    const { walletAddress, amount, choice } = req.body;
-
-    const response = await resolvePool(walletAddress, amount, choice);
-    res.status(200).json({ success: true, response });
-
+    res.status(200).send( Math.random() > 0.5 ? 'heads' : 'tails' );
   } catch (err) {
-    res.status(500).json({ success: false, response: 'Error in resolving pool', err: err.message });
+    res.status(500).json({ success: false, response: 'Error in deciding result', err: err.message });
   }
 });
 
-app.post('/refund', async (req, res) => {
+app.post('/distribute', async (req, res) => {
   try {
-    const { walletAddress, refundAmount } = req.body;
+    const { walletAddress, amount } = req.body;
 
-    const response = await refundGame(walletAddress, refundAmount);
+    const response = await transferPool(walletAddress, amount);
+    
     res.status(200).json({ success: true, response });
   } catch (err) {
     res.status(500).json({ success: false, response: 'Error in refunding', err: err.message });
